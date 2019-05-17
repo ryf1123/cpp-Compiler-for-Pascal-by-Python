@@ -13,8 +13,16 @@ tokens = [
     # from not reserved
     # 其他不在下面正则表达式中定义的
     'NUMBER',
+    'INTEGER',
+    'NAME',
     'ID',
-    'empty',# 不确定是不是这么写
+    #'empty',# 不确定是不是这么写
+    'READ',
+
+    'SYS_CON',
+    'SYS_FUNCT',
+    'SYS_TYPE',
+    'SYS_PROC',
 
     # 这些是从下面的正则表达式中的
     'LP',         
@@ -27,7 +35,7 @@ tokens = [
     'MUL',         
     'DIV',         
     'UNEQUAL',     
-    'OPERATOR_NOT',         
+    #'OPERATOR_NOT',         
     'PLUS',         
     'MINUS',     
     'GE',         
@@ -55,11 +63,11 @@ class lexer:
     t_RB            = r'\]' 
     t_DOT           = r'\.'# 是这个吧？ 
     t_COMMA         = r'\,' 
-    t_COLON         = r'\;' 
+    t_COLON         = r'\:' 
     t_MUL           = r'\*' 
     t_DIV           = r'\/' 
     t_UNEQUAL       = r'\<\>' 
-    t_OPERATOR_NOT  = 'NOT'  # 其实应该是和Keyword的not不同的，所以不会重复
+    # t_OPERATOR_NOT  = 'NOT'  # 其实应该是和Keyword的not不同的，所以不会重复
     # 第二列
     t_PLUS          = r'\+'
     t_MINUS         = r'\-'
@@ -73,14 +81,23 @@ class lexer:
     t_DOTDOT        = r'\.\.'
     t_SEMI          = r'\;'
 
+
     # 系统函数还未实现
+    def t_NAME(self, t):
+        r'[A-Za-z](_?[A-Za-z0-9])*'#(\.[A-Za-z](_?[A-Za-z0-9])*)?'
+        t.type = reserved.get(t.value.lower(), 'NAME')
+        return t
+
+    # 先这样重复着写
     def t_ID(self, t):
         r'[A-Za-z](_?[A-Za-z0-9])*'#(\.[A-Za-z](_?[A-Za-z0-9])*)?'
         t.type = reserved.get(t.value.lower(), 'ID')
         return t
 
-    def t_NUMBER(self, t):
+    #def t_NUMBER(self, t):
+    def t_INTEGER(self, t):
         r'[-]?[0-9]*[0-9]+'
+        print("NUMBER recognized")
         return t
 
     def t_error(self, t):
@@ -113,8 +130,8 @@ lexer.build()
 #lexer = lex.lex()
 
 if __name__ == '__main__':  
-    m = mylexer()
-    m.build()
+    m = lexer
+    # m.build()
     #m.test(" + ")
     print("\n\n\nBegins~")
     if len(sys.argv) > 1:
