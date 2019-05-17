@@ -1,3 +1,5 @@
+#/usr/bin/env python
+# -*- coding: UTF-8 -*-
 import ply.lex as lex
 
 # List of token names.   This is always required

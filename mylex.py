@@ -1,6 +1,5 @@
 #/usr/bin/env python
 # -*- coding: UTF-8 -*-
-
 # 编译原理大作业 SPL based on Python
 # 任宇凡 刘洪甫 邱兆林
 
@@ -15,6 +14,7 @@ tokens = [
     # 其他不在下面正则表达式中定义的
     'NUMBER',
     'ID',
+    'empty',# 不确定是不是这么写
 
     # 这些是从下面的正则表达式中的
     'LP',         
@@ -45,7 +45,7 @@ print(tokens)
 print()
 print(reserved)
 
-class mylexer:
+class lexer:
     tokens = tokens
     # 简单token的正则表达式
     # 第一列 
@@ -107,21 +107,26 @@ class mylexer:
         # 上面一种写法的简写
         for tok in self.lexer:
             print (tok)
-    
-m = mylexer()
-m.build()
-#m.test(" + ")
 
-if len(sys.argv) > 1:
-    f = open(sys.argv[1],"r")
-    data = f.read()
-    f.close()
-else:
-    data = ""
-    while 1:
-        try:
-            data += raw_input() + "\n"
-        except:
-            break
-m.test(data)
+lexer = lexer()
+lexer.build()
+#lexer = lex.lex()
+
+if __name__ == '__main__':  
+    m = mylexer()
+    m.build()
+    #m.test(" + ")
+    print("\n\n\nBegins~")
+    if len(sys.argv) > 1:
+        f = open(sys.argv[1],"r")
+        data = f.read()
+        f.close()
+    else:
+        data = ""
+        while 1:
+            try:
+                data += raw_input() + "\n"
+            except:
+                break
+    m.test(data)
 
