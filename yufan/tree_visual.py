@@ -8,13 +8,13 @@ from operator import (add)
  
  
 # drawTree :: Tree a -> String
-def drawTree(tree):
+def drawTree(tree, ignore_error=False):
     '''ASCII diagram of a tree.'''
-    return '\n'.join(draw(tree))
+    return '\n'.join(draw(tree, ignore_error))
  
  
 # draw :: Tree a -> [String]
-def draw(node):
+def draw(node, ignore_error=False):
     '''List of the lines of an ASCII
        diagram of a tree.'''
     def shift(first, other, xs):
@@ -88,13 +88,32 @@ def Node(v):
 # nest :: Tree a -> [Tree a]
 def nest(tree):
     '''Accessor function for children of tree node.'''
-    return tree['nest'] if 'nest' in tree else None
- 
+    # return tree['nest'] if 'nest' in tree else None
+    try:
+        return tree['nest'] if 'nest' in tree else None
+    except Exception as identifier:
+        print(identifier)
+        pass
+    else:
+        return None
+        
  
 # root :: Dict -> a
 def root(dct):
     '''Accessor function for data of tree node.'''
-    return dct['root'] if 'root' in dct else None
+    # return dct['root'] if 'root' in dct else None
+    # print("test: ", dct)
+
+    if dct == None:
+        return None
+    else:
+        return dct['root'] if 'root' in dct else None
+    # except Exception as identifier:
+    #     print(dct)
+    #     print(identifier)
+    # else:
+        
+    #     return None
  
  
 # MAIN ---
