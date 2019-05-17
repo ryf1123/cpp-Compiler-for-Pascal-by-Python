@@ -14,18 +14,16 @@ def p_program(p):
         # '''program :  program_head  routine  DOT
         #         | factor '''
         '''program :  program_head  routine  DOT '''
+        p[0] = Node("program")([p[1], p[2]])
         
-        print(1)
 def p_program_head(p):
         '''program_head :  PROGRAM  NAME  SEMI'''
-
-
-        print(1)
+        p[0] = Node("program_head")([])
+        
 def p_routine(p):
         '''routine :  routine_head  routine_body'''
+        p[0] = Node("routine")([p[1], p[2]])
 
-
-        print(1)
 def p_sub_routine(p):
         '''sub_routine :  routine_head  routine_body'''
 
@@ -388,6 +386,7 @@ if __name__ == '__main__':
         f.close()
         result = parser.parse(data, debug=1)
         print(result)
+        drawTree(result)
     else:
         while True:    
             try:
@@ -400,6 +399,7 @@ if __name__ == '__main__':
 
             result = parser.parse(data, debug=1)    
             print(result)
+            
 
 
 
