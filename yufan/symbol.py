@@ -1,7 +1,10 @@
 import sys
+import json
 
 
 class Symbol:
+    '''符号类'''
+
     def __init__(self, name, type, var_function="var", memory_size=4):
         self.name = name
         self.type = type
@@ -13,65 +16,86 @@ class Symbol:
             str(self.name),
             str(self.type),
             str(self.var_function),
-            str(self.memory_size)
-        )
+            str(self.memory_size))
+
+
+class Scope:
+    '''作用域类'''
+
+    def __init__(self, name=None, parent_scope=None, type=None, return_type=None):
+        self.name = name
+        self.parent_scope = parent_scope
+        self.type = type
+        self.return_type = return_type
+
+        self.function = {}
+        self.var = {}
+
+    def __str__(self):
+        return 'Scope(%s, function=%s, var=%s)' % (
+            str(self.name),
+            json.dumps(self.function, indent=4, default=str),
+            json.dumps(self.var, indent=4, default=str))
 
 
 class Table:
+    '''符号表类'''
+
     def __init__(self):
         '''符号表用一个 list 表示，其中每一个为一层 scope。初始只有一层 main。'''
-        self.tables = [{
-            'scope': 'main',
-            'parent_scope': None,
-            'type': 'function',
-            'return_type': 'void',
-            'functions': {},
-            'vars': {},
-        }]
+        self.table = [Scope('main', type='function')]
 
     def __str__(self):
-        return 'Table()'
+        return '\n'.join((str(scope) for scope in self.table))
 
     def get_current_scope_name(self):
         '''获得当前作用域名'''
-        return self.tables[-1]['scope']
+        return self.table[-1].name
 
-    def get_identifier(self, identifier, index=None):
+    def get_identifier(self, name, index=None):
         '''按照作用域依次查找一个名字'''
         if index is None:
-            index = len(self.tables) - 1
+            index = len(self.table) - 1
         if index == -1:
             return None
-        if identifier in self.tables[index]['vars']:
-            return self.tables[index]['vars'][identifier]
+
+        scope = self.table[-1]
+        if name in scope.var:
+            return scope.var[name]
         else:
-            return self.get_identifier(identifier, index - 1)
+            return self.get_identifier(name, index - 1)
 
     def set_identifier(self, name, type, var_function):
         '''定义一个新名字'''
-        scope = self.tables[-1]
-        var_function = var_function + 's'
+        scope = self.table[-1]
 
-        if name in scope[var_function]:
-            sys.exit('Name `%s` is already defined. ')
+        if name in scope.__getattribute__(var_function):
+            sys.exit('Name `%s` is already defined. ' % name)
 
         else:
             symbol = Symbol(name, type, var_function)
-            scope[var_function] = symbol
+            scope.__getattribute__(var_function)[name] = symbol
             return symbol
 
     def add_scope(self, name, type, return_type):
         '''增加一层作用域'''
-        scope = self.tables[-1]
-        self.tables.append({
-            'scope': '%s.%s' % (scope['scope'], name),
-            'parent_scope': scope['scope'],
-            'type': type,
-            'return_type': return_type,
-            'functions': {},
-            'vars': {},
-        })
+        scope = self.table[-1]
+        self.table.append(Scope(
+            name='%s.%s' % (scope.name, name),
+            parent_scope=scope.name,
+            type=type,
+            return_type=return_type))
 
     def del_scope(self):
         '''删除一层作用域'''
-        return self.tables.pop()
+        return self.table.pop()
+
+
+if __name__ == '__main__':
+    t = Table()
+    print(t)
+    t.set_identifier('i', 'int', 'var')
+    t.set_identifier('j', 'int', 'var')
+    t.add_scope('f', 'function', None)
+    t.set_identifier('j', 'int', 'var')
+    print(t)
