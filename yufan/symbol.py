@@ -2,6 +2,16 @@ import sys
 import json
 
 
+def list_format(list, indent=4):
+    return '[%s%s%s]' % (
+        '\n' + ' '*indent if len(list) else '',
+        (',' + '\n' + ' '*indent).join(
+            str(item).replace('\n', '\n' + ' ' * indent)
+            for item in list),
+        '\n' if len(list) else ''
+    )
+
+
 class Symbol:
     '''符号类'''
 
@@ -12,7 +22,7 @@ class Symbol:
         self.memory_size = memory_size
 
     def __str__(self):
-        return 'Symbol(name=%s, type=%s, var_function=%s, memory_size=%s)' % (
+        return 'Symbol(`%s`, %s, %s, memory_size=%s)' % (
             str(self.name),
             str(self.type),
             str(self.var_function),
@@ -32,10 +42,11 @@ class Scope:
         self.var = {}
 
     def __str__(self):
-        return 'Scope(%s, function=%s, var=%s)' % (
+        return 'Scope(`%s`, function=%s, var=%s)' % (
             str(self.name),
-            json.dumps(self.function, indent=4, default=str),
-            json.dumps(self.var, indent=4, default=str))
+            list_format(list(self.function.values())),
+            list_format(list(self.var.values()))
+        )
 
 
 class Table:
@@ -46,7 +57,7 @@ class Table:
         self.table = [Scope('main', type='function')]
 
     def __str__(self):
-        return '\n'.join((str(scope) for scope in self.table))
+        return 'Table(%s)' % list_format(self.table)
 
     def get_current_scope_name(self):
         '''获得当前作用域名'''
@@ -54,12 +65,13 @@ class Table:
 
     def get_identifier(self, name, index=None):
         '''按照作用域依次查找一个名字'''
+
         if index is None:
             index = len(self.table) - 1
         if index == -1:
             return None
 
-        scope = self.table[-1]
+        scope = self.table[index]
         if name in scope.var:
             return scope.var[name]
         else:
@@ -93,9 +105,9 @@ class Table:
 
 if __name__ == '__main__':
     t = Table()
-    print(t)
     t.set_identifier('i', 'int', 'var')
     t.set_identifier('j', 'int', 'var')
     t.add_scope('f', 'function', None)
     t.set_identifier('j', 'int', 'var')
     print(t)
+    print(t.get_identifier('i'))
