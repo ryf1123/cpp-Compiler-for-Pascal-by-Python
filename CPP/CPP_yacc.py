@@ -256,11 +256,14 @@ def p_val_para_list(p):
         p[0] = Node("val_para_list", [p[1]])
 
 
-        
-def p_routine_body(p):
+def p_routine_body_1(p):
         '''routine_body :  compound_stmt'''
         p[0] = Node("routine_body", [p[1]])
 
+# FIXME: 为了testcase专门修改的，让routine body可以全空
+def p_routine_body_2(p):
+        '''routine_body :  empty'''
+        p[0] = Node("routine_body", [p[1]])
         
 def p_compound_stmt(p):
         '''compound_stmt :  BEGIN  stmt_list  END'''

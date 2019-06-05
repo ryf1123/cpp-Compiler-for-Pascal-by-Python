@@ -16,10 +16,10 @@
 - [x] scope.pas
 - [x] scopes.pas
 - [x] stmt_list.pas
-- [ ] test_case.pas
+- [x] test_case.pas
 - [x] test_div_mod.pas
 - [ ] test_error.pas
-- [ ] testcase1.pas
+- [x] testcase1.pas
 - [x] types.pas
 - [x] while.pas
 
