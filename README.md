@@ -1,6 +1,27 @@
 # cpp: Compiler for Pascal by Python
 
+## To Do
 
+### Test cases: test the AST and PLY
+
+- [ ] assign_demo.pas
+- [ ] calc.pas
+- [ ] comparisons.pas
+- [ ] const_fold.pas
+- [ ] for.pas
+- [ ] function.pa
+- [ ] if.pas
+- [ ] procedure.pas
+- [ ] repeat.pas
+- [ ] scope.pas
+- [ ] scopes.pas
+- [ ] stmt_list.pas
+- [ ] test_case.pas
+- [ ] test_div_mod.pas
+- [ ] test_error.pas
+- [ ] testcase1.pas
+- [ ] types.pas
+- [ ] while.pas
 
 首先我实现了下lex和yacc，要求是按照SPL的doc来的，而不是按照SPL的要求来的
 
