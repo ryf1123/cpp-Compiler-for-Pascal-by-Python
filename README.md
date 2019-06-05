@@ -5,23 +5,31 @@
 ### Test cases: test the AST and PLY
 
 - [ ] assign_demo.pas
-- [ ] calc.pas
-- [ ] comparisons.pas
-- [ ] const_fold.pas
-- [ ] for.pas
-- [ ] function.pa
-- [ ] if.pas
-- [ ] procedure.pas
-- [ ] repeat.pas
-- [ ] scope.pas
-- [ ] scopes.pas
-- [ ] stmt_list.pas
+- [x] calc.pas
+- [x] comparisons.pas
+- [x] const_fold.pas
+- [x] for.pas
+- [x] function.pa
+- [x] if.pas
+- [x] procedure.pas
+- [x] repeat.pas
+- [x] scope.pas
+- [x] scopes.pas
+- [x] stmt_list.pas
 - [ ] test_case.pas
-- [ ] test_div_mod.pas
+- [x] test_div_mod.pas
 - [ ] test_error.pas
 - [ ] testcase1.pas
-- [ ] types.pas
-- [ ] while.pas
+- [x] types.pas
+- [x] while.pas
+
+## Bug报备
+
+
+
+
+
+## 文档
 
 首先我实现了下lex和yacc，要求是按照SPL的doc来的，而不是按照SPL的要求来的
 

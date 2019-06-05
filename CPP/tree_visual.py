@@ -7,12 +7,14 @@ from operator import (add)
  
 import pydot 
 
+visu_path = './visulization/AST_graph.png'
+
 # drawTree :: Tree a -> String
 def drawTree(tree):
        
     graph = pydot.Dot(graph_type='graph')
     traversal(graph, tree)
-    graph.write_png('./AST_graph.png')
+    graph.write_png(visu_path)
     # '''ASCII diagram of a tree.'''
     # return '\n'.join(draw(tree, ignore_error))
 
