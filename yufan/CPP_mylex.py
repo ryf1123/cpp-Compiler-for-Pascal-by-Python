@@ -60,7 +60,7 @@ class lexer:
     tokens = tokens
     # 简单token的正则表达式
     # 第一列 
-    t_REAL          = r'\d+\.\d+'
+    # t_REAL          = r'\d+\.\d+'
     t_LP            = r'\(' 
     t_RP            = r'\)' 
     t_LB            = r'\[' 
@@ -98,6 +98,11 @@ class lexer:
         t.type = reserved.get(t.value.lower(), 'ID')
         return t
 
+    def t_REAL(self, t):
+        r'\d+\.\d+'
+        print("real recognized")
+        return t
+    # t_REAL          = r'\d+\.\d+'
     #def t_NUMBER(self, t):
     def t_INTEGER(self, t):
         r'[-]?[0-9]*[0-9]+'
