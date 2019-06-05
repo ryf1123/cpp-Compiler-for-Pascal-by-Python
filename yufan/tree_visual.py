@@ -1,4 +1,3 @@
-#/usr/bin/env python
 # -*- coding: UTF-8 -*-
 
 '''Vizualize a tree'''
@@ -6,116 +5,67 @@
 from itertools import (repeat, starmap)
 from operator import (add)
  
- 
-# drawTree :: Tree a -> String
-def drawTree(tree, ignore_error=False):
-    '''ASCII diagram of a tree.'''
-    return '\n'.join(draw(tree, ignore_error))
- 
- 
-# draw :: Tree a -> [String]
-def draw(node, ignore_error=False):
-    '''List of the lines of an ASCII
-       diagram of a tree.'''
-    def shift(first, other, xs):
-        return list(starmap(
-            add,
-            zip(
-                [first] + list(
-                    repeat(other, len(xs) - 1)
-                ),
-                xs
-            )
-        ))
- 
-    def drawSubTrees(xs):
-        return (
-            (
-                ['|'] + shift(
-                    '├─ ', '│  ', draw(xs[0])
-                ) + drawSubTrees(xs[1:])
-            ) if 1 < len(xs) else ['|'] + shift(
-                '└─ ', '   ', draw(xs[0])
-            )
-        ) if xs else []
- 
-    return (str(root(node))).splitlines() + (
-        drawSubTrees(nest(node))
-    )
- 
- 
-# TEST ----------------------------------------------------
-# main :: IO ()
-def main():
-    '''Test'''
- 
-    # tree :: Tree Int
-    tree = Node(1)([
-        Node(2)([
-            Node(4)([
-                Node(7)([])
-            ]),
-            Node(5)([])
-        ]),
-        Node(3)([
-            Node(6)([
-                Node(8)([]),
-                Node(9)([])
-            ])
-        ]),
-        Node(4)([
-            Node(6)([
-                Node(8)([]),
-                Node(9)([])
-            ])
-        ])
-    ])
- 
-    print(drawTree(tree))
- 
- 
-# GENERIC -------------------------------------------------
- 
- 
-# Node :: a -> [Tree a] -> Tree a
-def Node(v):
-    '''Contructor for a Tree node which connects a
-       value of some kind to a list of zero or
-       more child trees.'''
-    return lambda xs: {'type': 'Node', 'root': v, 'nest': xs}
- 
- 
-# nest :: Tree a -> [Tree a]
-def nest(tree):
-    '''Accessor function for children of tree node.'''
-    # return tree['nest'] if 'nest' in tree else None
-    try:
-        return tree['nest'] if 'nest' in tree else None
-    except Exception as identifier:
-        print(identifier)
-        pass
-    else:
-        return None
-        
- 
-# root :: Dict -> a
-def root(dct):
-    '''Accessor function for data of tree node.'''
-    # return dct['root'] if 'root' in dct else None
-    # print("test: ", dct)
+import pydot 
 
-    if dct == None:
-        return None
-    else:
-        return dct['root'] if 'root' in dct else None
-    # except Exception as identifier:
-    #     print(dct)
-    #     print(identifier)
-    # else:
-        
-    #     return None
- 
- 
-# MAIN ---
-if __name__ == '__main__':
-    main()
+# drawTree :: Tree a -> String
+def drawTree(tree):
+       
+    graph = pydot.Dot(graph_type='graph')
+    traversal(graph, tree)
+    graph.write_png('./AST_graph.png')
+    # '''ASCII diagram of a tree.'''
+    # return '\n'.join(draw(tree, ignore_error))
+
+# FIXME: move random into utils.py
+import random
+
+class Node(object):
+    def __init__(self, t, c):
+        self._type = t
+        self._children = c
+        self._id = "%s: %08d"%(self._type, round(random.random() * 100000000))
+
+    @property
+    def children(self):
+        return self._children
+
+    @property
+    def type(self):
+        return self._type
+
+    @property
+    def id(self):
+        return self._id
+
+# FIXME: routine_head 的其他几个分支现在全部是None
+# init a pydot.graph
+# traversal(order does not matters) the tree and add every edge into the graph
+# draw and save the graph
+def traversal(graph, node):
+    print()
+    print("node.type:", node.type)
+    if node.children != None and node.type != "empty_production":
+        print(123)
+        print(node.type)
+        print("node.children:", node.children)
+        for child in node.children:
+            # FIXME: 用于完善代码时取消忽略判断，但是真实情况应该忽略None
+            if (not isinstance(child, str)):
+            # if (not child == None) and (not isinstance(child, str)):
+                print("node.id, child:", node.id, child, node.type)
+                try:
+                    edge = pydot.Edge(node.id, child.id)
+                    graph.add_edge(edge)
+                    traversal(graph, child)
+                except Exception as identifier:
+                    print("[Exception]: ", identifier)
+                    # pass
+            else:
+                # 是str
+                # FIXME: 由于常量数字非常容易重复，所以需要加上一个随机数
+                edge = pydot.Edge(node.id, child+"%10d"%(round(random.random() * 100000000)))
+                graph.add_edge(edge)
+        print("[End of for]")    
+                
+                
+    

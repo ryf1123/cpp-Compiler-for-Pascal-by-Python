@@ -8,8 +8,8 @@
 
 reserved = {
     'int':"INTEGER",
-    'real':"REAL",
-    'char':"CHAR",
+    #'real':"REAL",
+    #'char':"CHAR",
     'string':"STRING",
     # 其中不需要实现的已经注释掉了 
     "and":"AND",        
@@ -42,6 +42,19 @@ reserved = {
     "type":"TYPE",        
     "until":"UNTIL",        
     "var":"VAR",    
-    "while":"WHILE"    
+    "while":"WHILE", 
+
+
+    "write":"SYS_PROC",
+    "writeln":"SYS_PROC",
+
+
+    "boolean":"SYS_TYPE",
+    "char":"SYS_TYPE",
+    "integer":"SYS_TYPE",
+    "real":"SYS_TYPE",   
     # "with":""
+
+    "true":"true",
+    "false":"false"
 }

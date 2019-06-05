@@ -1,4 +1,3 @@
-#/usr/bin/env python
 # -*- coding: UTF-8 -*-
 # 编译原理大作业 SPL based on Python
 # 任宇凡 刘洪甫 邱兆林
@@ -9,20 +8,24 @@ import ply.lex as lex
 import sys
 from reserved import reserved
 
+
 tokens = [
     # from not reserved
     # 其他不在下面正则表达式中定义的
     'NUMBER',
     'INTEGER',
     'NAME',
+    'CHAR',
+    'REAL',
     'ID',
     #'empty',# 不确定是不是这么写
     'READ',
 
     'SYS_CON',
     'SYS_FUNCT',
-    'SYS_TYPE',
-    'SYS_PROC',
+    # 'SYS_TYPE',写到reserved文件中了
+
+    # 'SYS_PROC',
 
     # 这些是从下面的正则表达式中的
     'LP',         
@@ -46,7 +49,7 @@ tokens = [
     'ASSIGN',     
     'MOD',         
     'DOTDOT',     
-    'SEMI'         
+    'SEMI'       
 ] + list(reserved.values())
 
 print(tokens)
@@ -57,6 +60,7 @@ class lexer:
     tokens = tokens
     # 简单token的正则表达式
     # 第一列 
+    t_REAL          = r'\d+\.\d+'
     t_LP            = r'\(' 
     t_RP            = r'\)' 
     t_LB            = r'\[' 
@@ -80,8 +84,8 @@ class lexer:
     t_MOD           = 'MOD'
     t_DOTDOT        = r'\.\.'
     t_SEMI          = r'\;'
-
-
+    t_CHAR          = r'(\'([^\\\'\.]?)\')|(\"([^\\\"\.]?)\")'
+    
     # 系统函数还未实现
     def t_NAME(self, t):
         r'[A-Za-z](_?[A-Za-z0-9])*'#(\.[A-Za-z](_?[A-Za-z0-9])*)?'
@@ -99,6 +103,10 @@ class lexer:
         r'[-]?[0-9]*[0-9]+'
         print("NUMBER recognized")
         return t
+
+    # def t_CHAR(self, t):
+    #     t.value = t.value[1:-1]
+    #     return t
 
     def t_error(self, t):
         print("[  Illegal character  ] '%s'" % t.value[0])
