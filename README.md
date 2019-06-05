@@ -4,7 +4,7 @@
 
 ### Test cases: test the AST and PLY
 
-- [ ] assign_demo.pas
+- [x] assign_demo.pas
 - [x] calc.pas
 - [x] comparisons.pas
 - [x] const_fold.pas

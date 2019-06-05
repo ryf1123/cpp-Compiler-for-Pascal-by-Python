@@ -9,7 +9,7 @@ BEGIN
     1: y := x + 1;
     2: y := x + 2;
     3: y := x + 3;
-    ELSE
+    
     BEGIN
         y := x + 5;
     END;

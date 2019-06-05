@@ -301,10 +301,17 @@ def p_non_label_stmt(p):
 #         '''assign_stmt :  NAME  ASSIGN  expression
 #                     | NAME LB expression RB ASSIGN expression
 #                     | NAME  DOT  NAME  ASSIGN  expression'''
-def p_assign_stmt(p):
+def p_assign_stmt_1(p):
         '''assign_stmt :  NAME  ASSIGN  expression'''
         p[0] = Node("assign_stmt", [p[3]])  
 
+def p_assign_stmt_2(p):
+        '''assign_stmt :  NAME LB expression RB ASSIGN expression'''
+        p[0] = Node("assign_stmt", [p[3], p[6]]) 
+
+def p_assign_stmt_3(p):
+        '''assign_stmt :  NAME  DOT  NAME  ASSIGN  expression'''
+        p[0] = Node("assign_stmt", [p[4]]) 
         
 def p_proc_stmt(p):
         '''proc_stmt :  NAME
