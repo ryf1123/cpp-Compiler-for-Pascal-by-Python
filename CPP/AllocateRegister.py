@@ -1,4 +1,3 @@
-from SymTable import SymTableEntrt
 
 class AllocteRegister(object):
     def __init__(self, symtable, threeAC):
@@ -22,23 +21,23 @@ class AllocteRegister(object):
             self.register_symbol[reg] = ''
         
         # add symbol
-        for scope in self.symtable.table.keys():
-            scope_entry = self.symtable[scope]
-            scope_name = scope_entry['Name'] 
-            for var in scope_entry['Ident'].keys:
-                var_entry = self.symtable.Lookup(var, 'Ident')
+        for scope in self.symtable.table:
+            scope_name = scope.name
+            for var in scope.symbols.keys():
+                var_entry = self.symtable.get_identifier(var)
                 type_entry = self.symtable.Lookup(var_entry.typ, 'Ident')
                 if var_entry != None:
                     self.symbols.append(var)
-                if var_entry.cat == 'object' and :
-                    var = var.split('_')[1]
+                # array？
+                if var_entry.var_func == 'object':
                     for param in var_entry.params:
                         self.symbols.append(var+'_'+param[0])
-                        self.symbols.append('self_'+param[0])
-                    
-                if scope_name not in self.symtable.localVals.keys():
-                    self.symtable.localVals[scope_name] = []
-                self.symbols += self.symtable.localVals[scope_name]
+                        # self.symbols.append('self_'+param[0])
+
+            # TODO 增加临时变量        
+            # if scope_name not in self.symtable.localVals.keys():
+            #     self.symtable.localVals[scope_name] = []
+            # self.symbols += self.symtable.localVals[scope_name]
             
             self.symbols = list(set(self.symbols))
 
@@ -54,35 +53,72 @@ class AllocteRegister(object):
             self.block_label[block] = ""
         
         for index, block in enumerate(self.blocks):
-            if self.code[block[0]][1] = 'label':
+            if self.code[block[0]][1] = 'LABEL':
                 label_name = self.code[block[0]][3]
                 self.block_label[block] = label_name
             
             for i in range(index+1, len(self.blocks)):
                 block = self.blocks[i]
-                if self.code[block[0]][1] != 'label':
+                if self.code[block[0]][1] != 'LABEL':
                     self.block_label[block] = label_name
                 else:
                     break
 
         for block in self.blocks:
             if self.block_label[block] = '':
-                self.block_label = 'Main' 
+                self.block_label = 'main' 
 
 
     def label_line(self, label_name):
         '''
             find line num by label name 
         '''
-        pass
-        
-    
+        for i in range(len(self.code)):
+            if self.code[i][1] == 'LABEL':
+                if self.code[i][3] == None:
+                    if self.code[i][5] == label_name:
+                        return self.code[i][0]
+                else:
+                    if self.code[i][3] == label_name:
+                        return self.code[i][0]
+   
     
     def block_assign(self, block_index):
         '''
-            put the code to the given block from the last line to first line
+            read the code in the given block from the last line to first line
+            update next use 
         '''
-        pass
+        
+        block = self.blocks[block_index]
+        start, end = block
+        code = self.code[start-1:end]
+
+        for sym in self.symbols:
+            preline[sym] = -1
+        
+        for i in range(len(code), 0, -1):
+            line = {}
+            code_line = code[i-1]
+
+            lhs = code_line[2]
+            op1 = code_line[3]
+            op2 = code_line[4]
+
+            if lhs in self.symbols:
+                line[lhs] = -1
+            if op1 in self.symbols:
+                line[op1] = code_line[0]
+            if op2 in self.symbols:
+                line[op2] = code_line[0]
+            
+            for sym in self.symbols:
+                if sym not in code_line:
+                    line[sym] = preline[sym]
+                
+            self.next_use[block_index].append(line)
+            preline = line.copy()
+
+        self.next_use[block_index] = list(reversed(self.next_use[block_index]))
 
 
     def get_block_maxuse(self, block_index, line_num):

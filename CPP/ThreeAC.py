@@ -17,7 +17,7 @@ class ThreeAC(object):
             self.tmpoffset[scope_name] = {}
             mapoff = self.tmpoffset[scope_name]
 
-            for var in scope.var.keys():
+            for var in scope.symbols.keys():
                 var_entry = self.symtable.get_identifier(var)
                 if scope != 'main':
                     if len(var_entry.params) != 0:
