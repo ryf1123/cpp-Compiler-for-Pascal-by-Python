@@ -32,7 +32,7 @@ class Symbol:
             return size[self.type]
 
         elif self.var_function == 'object':
-            # TODO 计算 object 的大小
+            # TODO 明确 object 和 type 的定义
             return 0
 
         elif self.var_function == 'array':
@@ -42,10 +42,21 @@ class Symbol:
 
             return size
 
-        else:
+        elif self.var_function == 'function':
             return 0
 
-    def __init__(self, name, type, var_function="var", offset=0, params=None):
+        else:  # type
+            symbol = Table().get_identifier(self.type)
+            if symbol.type != 'object':
+                sys.exit('`%s` is not a type. ' % self.type)
+
+            size = 0
+            for (name, type) in symbol.params:
+                size += Symbol(name, type)._get_size()
+
+            return size
+
+    def __init__(self, name, type, var_function="var", offset=0, params=None, scope=None):
         '''初始化一个符号
 
         name:           符号名
@@ -54,6 +65,9 @@ class Symbol:
                         如果是函数，那么该字段表示它的返回值类型
 
         var_function:   one of 'var', 'const', 'array', 'object', 'function'
+                        # array 只支持基础类型
+                        # function 返回值只支持基础类型
+                        # object 需要支持嵌套
 
         offset:         该符号位于对应的作用域中的偏移量
 
@@ -67,6 +81,7 @@ class Symbol:
         self.var_function = var_function
         self.offset = offset
         self.params = params
+        self.scope = scope
         self.size = self._get_size()
 
     def __str__(self):
@@ -108,6 +123,12 @@ class Scope:
 
 class Table:
     '''符号表类'''
+
+    def __new__(cls, *args, **kwargs):
+        '''单例模式，使得任何地方的符号表都是同一个'''
+        if not hasattr(Table, "_instance"):
+            Table._instance = object.__new__(cls)
+        return Table._instance
 
     def __init__(self):
         '''符号表用一个 list 表示，其中每一个为一层 scope。初始只有一层 main。'''
