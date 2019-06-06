@@ -15,18 +15,16 @@ class ThreeAC(object):
             scope_name = scope.name
             width = 0
             self.tmpoffset[scope_name] = {}
-            mapdic = self.tmpoffset[scope_name]
+            mapoff = self.tmpoffset[scope_name]
 
             for var in scope.var.keys():
                 var_entry = self.symtable.get_identifier(var)
                 if scope != 'main':
                     if len(var_entry.params) != 0:
-                        mapdic[var] = offset
-                        var_entry.memory_size = self.symtable.width(var_entry.type, var)
-                        offset -= var_entry.memory_size
-                        width += var_entry.memory_size                   
-
-            # 
+                        mapoff[var] = offset
+                        offset -= var_entry.size
+                                          
+            # TODO 临时变量的偏移量计算
             # for local in self.symtable.localVals[scope_name]:
             #     objectVar = local.split('_')
 
@@ -46,8 +44,7 @@ class ThreeAC(object):
             #     offset -= 4
             #     mapdic[local] = offset
             #     width += 4
-
-            scope.width = width 
+ 
 
 
     def emit(self, op, lhs, op1, op2):
