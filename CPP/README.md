@@ -3,28 +3,59 @@
 运行方式
 
 ```shell
-pip2.7 install ply
-python2.7 myyacc2.py test_div_mod.pas
+$ pip3.7 install ply
+$ pip3.7 install pydot
+$ python3.7 myyacc2.py ./test_cases/test_div_mod.pas
 ```
 
 文件内容
 
 ```shell
-➜  # 请忽略里面的.pyc文件
 .
+├── CPP_mylex.py
+├── CPP_yacc.py
 ├── README.md
-├── mylex.py					词法分析主要函数
-├── mylex.pyc #
-├── myyacc2.py				语法分析的主要函数
-├── parser.out				这个文件很有用，自动生成，里面有所有产生式
-├── parsetab.py				没用
-├── parsetab.pyc #
-├── reserved.py				保留符号写在里面
-├── reserved.pyc #
-├── test_case.pas 		还没有经过测试的代码
-├── test_div_mod.pas 	已经通过测试的代码
-├── testcase1.pas			还没有经过测试的代码
-├── tree_visual.py 		将分析树可视化的代码
-└── tree_visual.pyc # 
+├── parsetab.py
+├── reserved.py
+├── symbol.py
+├── test_cases # test cases
+│   ├── assign_demo.pas
+│   ├── calc.pas
+│   ├── comparisons.pas
+│   ├── const_fold.pas
+│   ├── for.pas
+│   ├── function.pas
+│   ├── if.pas
+│   ├── procedure.pas
+│   ├── repeat.pas
+│   ├── scope.pas
+│   ├── scopes.pas
+│   ├── stmt_list.pas
+│   ├── test_case.pas
+│   ├── test_div_mod.pas
+│   ├── test_error.pas
+│   ├── testcase1.pas
+│   ├── types.pas
+│   └── while.pas
+├── tree_visual.py
+└── visulization # save the visulization ASL
+    ├── AST_graph.png
+    ├── AST_graph_assign.png
+    ├── AST_graph_cal.png
+    ├── AST_graph_comparison.png
+    ├── AST_graph_constfold.png
+    ├── AST_graph_for.png
+    ├── AST_graph_function.png
+    ├── AST_graph_if.png
+    ├── AST_graph_procedure.png
+    ├── AST_graph_repeat.png
+    ├── AST_graph_scope.png
+    ├── AST_graph_scopes.png
+    ├── AST_graph_stmt.png
+    ├── AST_graph_test_case.png
+    ├── AST_graph_test_div.png
+    ├── AST_graph_testcase1.png
+    ├── AST_graph_types.png
+    └── AST_graph_while.png
 ```
 
