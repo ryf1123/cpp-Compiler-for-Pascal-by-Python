@@ -15,11 +15,13 @@ def list_format(list, indent=4):
 class Symbol:
     '''符号类'''
 
-    def __init__(self, name, type, var_function="var", memory_size=4):
+    def __init__(self, name, type, var_function="var", memory_size=4, params=[]):
         self.name = name
         self.type = type
         self.var_function = var_function
         self.memory_size = memory_size
+        # +++++
+        self.params = params
 
     def __str__(self):
         return 'Symbol(`%s`, %s, %s, memory_size=%s)' % (
@@ -32,11 +34,13 @@ class Symbol:
 class Scope:
     '''作用域类'''
 
-    def __init__(self, name=None, parent_scope=None, type=None, return_type=None):
+    def __init__(self, name=None, parent_scope=None, type=None, return_type=None, width=0):
         self.name = name
         self.parent_scope = parent_scope
         self.type = type
         self.return_type = return_type
+        # +++++
+        self.width = width
 
         self.function = {}
         self.var = {}
@@ -55,6 +59,8 @@ class Table:
     def __init__(self):
         '''符号表用一个 list 表示，其中每一个为一层 scope。初始只有一层 main。'''
         self.table = [Scope('main', type='function')]
+        # +++++
+        self.tmp_vals = {}
 
     def __str__(self):
         return 'Table(%s)' % list_format(self.table)
