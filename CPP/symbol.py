@@ -57,9 +57,9 @@ class Symbol:
 
         offset:         该符号位于对应的作用域中的偏移量
 
-        params:         函数参数列表
+        params:         函数参数列表 # TODO
                         如果是 array，那么 params 依照 [(0, 10), (0, 100)] 的结构依次记录起始索引和结束索引
-                        如果是 object # TODO
+                        如果是 object 那么 params 依照 [(name, type), ...] 的结构依次记录。其中 type 可能是复杂类型
         '''
 
         self.name = name
@@ -86,26 +86,21 @@ class Scope:
         self.return_type = return_type
         self.width = width
 
-        self.var = {}
-        self.const = {}
-        self.array = {}
-        self.object = {}
-        self.function = {}
+        self.symbols = {}
 
     def __str__(self):
-        return 'Scope(`%s`, function=%s, var=%s)' % (
+        return 'Scope(`%s`, symbols=%s)' % (
             str(self.name),
-            list_format(list(self.function.values())),
-            list_format(list(self.var.values()))
+            list_format(list(self.symbols.values())),
         )
 
     def define(self, name, type, var_function='var', params=None):
-        if name in self.__getattribute__(var_function):
+        if name in self.symbols:
             sys.exit('Name `%s` is already defined. ' % name)
 
         symbol = Symbol(name, type, var_function,
                         offset=self.width, params=params)
-        self.__getattribute__(var_function)[name] = symbol
+        self.symbols[name] = symbol
         self.width += symbol.size
 
         return symbol
@@ -136,8 +131,8 @@ class Table:
             return None
 
         scope = self.table[index]
-        if name in scope.var:
-            return scope.var[name]
+        if name in scope.symbols:
+            return scope.symbols[name]
         else:
             return self.get_identifier(name, index - 1)
 
