@@ -131,10 +131,13 @@ class Table:
         return Table._instance
 
     def __init__(self):
-        '''符号表用一个 list 表示，其中每一个为一层 scope。初始只有一层 main。'''
+        '''符号表用一个栈表示，其中每一个为一层 scope。
+
+        初始只有一层 main。
+        临时变量全部放在 temp 中。
+        '''
         self.table = [Scope('main', type='function')]
-        # +++++
-        self.tmp_vals = {}
+        self.temp = Scope('temp', type='function')
 
     def __str__(self):
         return 'Table(%s)' % list_format(self.table)
@@ -163,6 +166,13 @@ class Table:
 
     define = set_identifier
 
+    def new_temp(self, type):
+        name = '_t%06d' % len(self.temp.symbols)
+        symbol = self.temp.define(name, type)
+        return symbol
+
+    define_temp = new_temp
+
     def add_scope(self, name, type, return_type):
         '''增加一层作用域'''
         scope = self.table[-1]
@@ -185,3 +195,10 @@ if __name__ == '__main__':
     t.set_identifier('j', 'integer', 'var')
     print(t)
     print(t.get_identifier('i'))
+
+    print()
+
+    symbol = t.new_temp('integer')
+    print(symbol)
+    symbol = t.new_temp('integer')
+    print(symbol)
