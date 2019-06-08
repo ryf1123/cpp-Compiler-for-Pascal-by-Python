@@ -2,6 +2,8 @@ import sys
 import json
 from functools import wraps
 
+label_number = 0
+
 
 def list_format(list, indent=4):
     '''格式化输出用函数'''
@@ -128,7 +130,7 @@ class Scope:
         self.symbols = {}
         self.temps = {}
 
-        self.label_number = 0
+        self.labels = set()
 
     def __str__(self):
         return 'Scope(`%s`, symbols=%s)' % (
@@ -163,8 +165,10 @@ class Scope:
 
     def label(self):
         '''申请一个 label'''
-        name = '_l%06d' % self.label_number
-        self.label_number += 1
+        global label_number
+        name = '_l%06d' % label_number
+        label_number += 1
+        self.labels.add(name)
         return name
 
     def get(self, name):
@@ -186,11 +190,9 @@ class Table:
         '''符号表用一个栈表示，其中每一个为一层 scope。
 
         初始只有一层 main。
-        临时变量全部放在 temp 中。
         '''
 
         self.table = [Scope('main', type='function')]
-        self.temp = Scope('temp', type='function')
 
     def __str__(self):
         return 'Table(%s)' % list_format(self.table)
