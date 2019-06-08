@@ -20,31 +20,13 @@ class ThreeAC(object):
             for var in scope.symbols.keys():
                 var_entry = self.symtable.get_identifier(var)
                 if scope != 'main':
-                    if len(var_entry.params) != 0:
+                    if var_entry.params != None:
                         mapoff[var] = offset
                         offset -= var_entry.size
-                                          
-            # TODO 临时变量的偏移量计算
-            # for local in self.symtable.localVals[scope_name]:
-            #     objectVar = local.split('_')
-
-            #     if len(objectVar) == 2:
-            #         objName = objectVar[0]
-            #         varName = objectVar[1]
-            #         objEntry = self.symtable.Lookup(scope_name+"_"+objName, 'Ident')
-            #         objoffset = objEntry.offset
-            #         for param in objEntry.params:
-            #             if param[0] == varName:
-            #                 offset = objoffset+param[3]
-            #                 mapdic[local] = offset
-            #                 break
-            #         offset = objoffset
-            #         continue
-
-            #     offset -= 4
-            #     mapdic[local] = offset
-            #     width += 4
- 
+            
+        for tmp in self.symtable.temp.symbols.keys():
+            tmp_var = self.symtable.temp.symbols[tmp]
+            mapoff[tmp] = tmp_var.size
 
 
     def emit(self, op, lhs, op1, op2):
