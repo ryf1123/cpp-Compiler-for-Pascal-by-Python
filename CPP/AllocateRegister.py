@@ -6,7 +6,7 @@ class AllocteRegister(object):
         self.code = threeAC.code
         self.symbols = []
 
-        self.unused_register = register_list
+        self.unused_register = register_list.copy()
         self.used_register = []
 
         self.basic_blocks = []
@@ -26,19 +26,17 @@ class AllocteRegister(object):
             scope_name = scope.name
             for var in scope.symbols.keys():
                 var_entry = self.symtable.get_identifier(var)
-                type_entry = self.symtable.Lookup(var_entry.typ, 'Ident')
                 if var_entry != None:
                     self.symbols.append(var)
-                # array？
-                if var_entry.var_func == 'object':
+                
+                if var_entry.var_function == 'record':
                     for param in var_entry.params:
                         self.symbols.append(var+'_'+param[0])
                         # self.symbols.append('self_'+param[0])
 
-            # TODO 增加临时变量        
-            # if scope_name not in self.symtable.localVals.keys():
-            #     self.symtable.localVals[scope_name] = []
-            # self.symbols += self.symtable.localVals[scope_name]
+            for temp in scope.temps.keys():
+                if self.symtable.get_identifier(temp) != None:
+                    self.symbols.append(temp)
             
             self.symbols = list(set(self.symbols))
 
