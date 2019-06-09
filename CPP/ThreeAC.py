@@ -24,9 +24,9 @@ class ThreeAC(object):
                         mapoff[var] = offset
                         offset -= var_entry.size
             
-        for tmp in self.symtable.temp.symbols.keys():
-            tmp_var = self.symtable.temp.symbols[tmp]
-            mapoff[tmp] = tmp_var.size
+            for tmp in scope.temp.keys():
+                temp_var = scope.temp[tmp]
+                mapoff[tmp] = tmp_var.size
 
 
     def emit(self, op, lhs, op1, op2):

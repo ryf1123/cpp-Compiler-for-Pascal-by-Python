@@ -9,7 +9,7 @@ op32_dict = {
     'AND':'and',
     'OR':'or',
     'MOD':'mod',
-    'CMP':'cmp'
+    'CMP':'cmp',
     'SHL':'shll',
     'SHR':'shrl',
 }
