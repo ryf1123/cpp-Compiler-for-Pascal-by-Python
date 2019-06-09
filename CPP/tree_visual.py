@@ -21,22 +21,10 @@ def drawTree(tree):
 
 class Node(object):
     def __init__(self, t, c):
-        self._type = t
-        self._children = c
-        self._id = "%s: %08d" % (
-            self._type, round(random.random() * 100000000))
-
-    @property
-    def children(self):
-        return self._children
-
-    @property
-    def type(self):
-        return self._type
-
-    @property
-    def id(self):
-        return self._id
+        self.type = t
+        self.children = c
+        self.id = "%s: %08d" % (
+            self.type, round(random.random() * 100000000))
 
 # FIXME: routine_head 的其他几个分支现在全部是None
 # init a pydot.graph

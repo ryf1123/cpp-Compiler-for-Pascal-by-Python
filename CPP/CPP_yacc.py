@@ -3,6 +3,7 @@
 # 任宇凡 刘洪甫 邱兆林
 
 # This file is the yacc parse part of the whole project
+import symbol
 import ply.yacc as yacc
 import sys
 from CPP_mylex import tokens
@@ -10,9 +11,14 @@ from tree_visual import *
 
 precedence = (
     ('left', 'PLUS', 'MINUS'),
-    #('left', 'MUL', 'DIV', 'kDIV', 'kMOD')
+    # ('left', 'MUL', 'DIV', 'kDIV', 'kMOD')
     ('left', 'MUL', 'DIV', 'MOD')
 )
+
+table = symbol.Table()
+
+scopes = []  # 调试用
+
 
 def p_program(p):
     # '''program :  program_head  routine  DOT
@@ -47,12 +53,12 @@ def p_label_part(p):
 
 
 def p_const_part(p):
-    '''const_part :  CONST  const_expr_list  
+    '''const_part :  CONST  const_expr_list
                 |  empty'''
     if len(p) == 3:
-        p[0] = Node("const_part", [p[1], p[2]])
+        p[0] = Node("const_part", [p[2]])
     elif len(p) == 2:
-        p[0] = Node("const_part", [p[1]])
+        p[0] = Node("const_part", [])
 
 
 def p_const_expr_list(p):
@@ -69,20 +75,41 @@ def p_const_expr(p):
     # print("[ *** ]: ", p[1])
     p[0] = Node("const_expr", [p[1], p[3]])
 
+    table.define(p[1], p[3].type, 'const', p[3].value)
+
 
 def p_const_value(p):
-    '''const_value :  INTEGER  
-                |  REAL  
-                |  CHAR  
-                |  STRING  
+    '''const_value :  INTEGER
+                |  REAL
+                |  CHAR
+                |  STRING
                 |  SYS_CON
                 | true
                 | false'''
     p[0] = Node("const_value", p[1])
 
+    p[0].value = p[1]
+
+    if type(p[1]) == int:
+        p[0].type = 'integer'
+
+    elif type(p[1]) == float:
+        p[0].type = 'real'
+
+    elif type(p[1]) == str:
+        p[0].type = 'char'
+
+    if str(p[1]).lower() == 'true':
+        p[0].type = 'boolean'
+        p[0].value = True
+
+    if str(p[1]).lower() == 'false':
+        p[0].type = 'boolean'
+        p[0].value = False
+
 
 def p_type_part(p):
-    '''type_part :  TYPE type_decl_list  
+    '''type_part :  TYPE type_decl_list
                 |  empty'''
     if len(p) == 3:
         p[0] = Node("type_part", [p[2]])
@@ -91,7 +118,7 @@ def p_type_part(p):
 
 
 def p_type_decl_list(p):
-    '''type_decl_list :  type_decl_list  type_definition  
+    '''type_decl_list :  type_decl_list  type_definition
                 |  type_definition'''
     if len(p) == 3:
         p[0] = Node("type_decl_list", [p[1], p[2]])
@@ -103,12 +130,15 @@ def p_type_definition(p):
     '''type_definition :  NAME  EQUAL  type_decl  SEMI'''
     p[0] = Node("type_definition", [p[3]])
 
+    table.define(p[1], p[3].type, 'type')
+
 
 def p_type_decl(p):
-    '''type_decl :  simple_type_decl  
-                |  array_type_decl  
+    '''type_decl :  simple_type_decl
+                |  array_type_decl
                 |  record_type_decl'''
     p[0] = Node("type_decl", [p[1]])
+    p[0].type = p[1].type
 
 
 # def p_simple_type_decl_1(p):
@@ -124,11 +154,14 @@ def p_type_decl(p):
 def p_simple_type_decl_1(p):
     '''simple_type_decl :  SYS_TYPE'''
     p[0] = Node("imple_type_decl", [p[1]])
+    print(p[0])
+    p[0].type = p[1]
 
 
 def p_simple_type_decl_2(p):
     '''simple_type_decl : NAME'''
     p[0] = Node("imple_type_decl", [p[1]])
+    p[0].type = p[1]
 
 
 def p_simple_type_decl_3(p):
@@ -142,40 +175,63 @@ def p_simple_type_decl_4(p):
 
 
 def p_array_type_decl(p):
-    '''array_type_decl :  ARRAY  LB  simple_type_decl  RB  OF  type_decl'''
-    p[0] = Node("array_type_decl", [p[1], p[2], p[3], p[4], p[5], p[6]])
+    '''array_type_decl :  ARRAY  LB  INTEGER  DOTDOT  INTEGER  RB  OF  type_decl'''
+    #         0             1    2      3       4        5     6   7       8
+    # TODO 只支持常数中的整数，并且是单维
+    # '''array_type_decl :  ARRAY  LB  simple_type_decl  RB  OF  type_decl'''
+    p[0] = Node("array_type_decl", [p[3], p[5], p[8]])
+
+    symbol = table.get_temp('array', 'type', {
+        'data_type': p[8].type,
+        'dimension': [(p[3], p[5])]
+    })
+
+    p[0].type = symbol.name
 
 
 def p_record_type_decl(p):
     '''record_type_decl :  RECORD  field_decl_list  END'''
     p[0] = Node("record_type_decl", [p[2]])
 
+    symbol = table.get_temp('record', 'type', p[2].list)
+    p[0].type = symbol.name
+
 
 def p_field_decl_list(p):
-    '''field_decl_list :  field_decl_list  field_decl  
+    '''field_decl_list :  field_decl_list  field_decl
                 |  field_decl'''
     if len(p) == 3:
         p[0] = Node("field_decl_list", [p[1], p[2]])
+        p[0].list = p[1].list + p[2].list
     else:
-        p[0] = Node("field_decl_list", [p[0]])
+        p[0] = Node("field_decl_list", [p[1]])
+        p[0].list = p[1].list
 
 
 def p_field_decl(p):
     '''field_decl :  name_list  COLON  type_decl  SEMI'''
+    #      0             1        2        3       4
     p[0] = Node("field_decl", [p[1], p[3]])
+
+    p[0].list = [
+        (name, p[3].type)
+        for name in p[1].list
+    ]
 
 
 def p_name_list(p):
-    '''name_list :  name_list  COMMA  NAME  
+    '''name_list :  name_list  COMMA  NAME
                 |  NAME'''
     if len(p) == 4:
         p[0] = Node("name_list", [p[1]])
+        p[0].list = p[1].list + [p[3]]
     else:
         p[0] = Node("name_list", [p[1]])
+        p[0].list = [p[1]]
 
 
 def p_var_part(p):
-    '''var_part :  VAR  var_decl_list  
+    '''var_part :  VAR  var_decl_list
                 |  empty'''
     if len(p) == 3:
         p[0] = Node("var_part", [p[2]])
@@ -184,7 +240,7 @@ def p_var_part(p):
 
 
 def p_var_decl_list(p):
-    '''var_decl_list :  var_decl_list  var_decl  
+    '''var_decl_list :  var_decl_list  var_decl
                 |  var_decl'''
     if len(p) == 3:
         p[0] = Node("var_decl_list", [p[1], p[2]])
@@ -196,12 +252,15 @@ def p_var_decl(p):
     '''var_decl :  name_list  COLON  type_decl  SEMI'''
     p[0] = Node("var_decl", [p[1], p[3]])
 
+    for name in p[1].list:
+        table.define(name, p[3].type)
+
 
 def p_routine_part(p):
-    '''routine_part :  routine_part  function_decl  
+    '''routine_part :  routine_part  function_decl
                 |  routine_part  procedure_decl
-                |  function_decl  
-                |  procedure_decl  
+                |  function_decl
+                |  procedure_decl
                 | empty'''
     if len(p) == 3:
         p[0] = Node("routine_part", [p[1], p[2]])
@@ -213,56 +272,107 @@ def p_function_decl(p):
     '''function_decl : function_head  SEMI  sub_routine  SEMI'''
     p[0] = Node("function_decl", [p[1], p[3]])
 
+    scope = table.del_scope()
+    scopes.append(scope)
+
 
 def p_function_head(p):
-    '''function_head :  FUNCTION  NAME  parameters  COLON  simple_type_decl '''
+    '''function_head :  FUNCTION  function_name  parameters  COLON  simple_type_decl '''
     p[0] = Node("function_head", [p[3], p[5]])
+
+    table.define(p[2], p[5].type, 'function', p[3].list)
+
+    for name, type in p[3].list:
+        table.define(name, type)
+
+    table.scope().return_type = p[5].type
+
+
+def p_function_name(p):
+    '''function_name : NAME '''
+    p[0] = p[1]
+
+    table.add_scope(p[1], 'function', 'integer')
 
 
 def p_procedure_decl(p):
     '''procedure_decl :  procedure_head  SEMI  sub_routine  SEMI'''
     p[0] = Node("procedure_decl", [p[1], p[3]])
 
+    scope = table.del_scope()
+    scopes.append(scope)
+
 
 def p_procedure_head(p):
-    '''procedure_head :  PROCEDURE NAME parameters '''
+    '''procedure_head :  PROCEDURE procedure_name parameters '''
     p[0] = Node("procedure_head", [p[3]])
+
+    table.define(p[2], 'integer', 'procedure', p[3].list)
+
+    for name, type in p[3].list:
+        table.define(name, type)
+
+
+def p_procedure_name(p):
+    '''procedure_name :  NAME'''
+    p[0] = p[1]
+
+    table.add_scope(p[1], 'function', 'integer')
 
 
 def p_parameters(p):
-    '''parameters :  LP  para_decl_list  RP  
+    '''parameters :  LP  para_decl_list  RP
                 |  empty'''
     if len(p) == 4:
-        p[0] = Node("parameters", [p[0], p[1], p[2]])
+        p[0] = Node("parameters", [p[2]])
+
+        p[0].list = p[2].list
     else:
         p[0] = Node("parameters", [p[1]])
 
+        p[0].list = []
+
 
 def p_para_decl_list(p):
-    '''para_decl_list :  para_decl_list  SEMI  para_type_list 
+    '''para_decl_list :  para_decl_list  SEMI  para_type_list
                 | para_type_list'''
     if len(p) == 4:
         p[0] = Node("para_decl_list", [p[1], p[3]])
+
+        p[0].list = p[1].list + p[3].list
     else:
         p[0] = Node("para_decl_list", [p[1]])
 
+        p[0].list = p[1].list
+
 
 def p_para_type_list(p):
-    '''para_type_list :  var_para_list COLON  simple_type_decl  
-    |  val_para_list  COLON  simple_type_decl'''
+    '''para_type_list :  var_para_list  COLON  simple_type_decl
+                      |  val_para_list  COLON  simple_type_decl'''
 
     p[0] = Node("para_type_list", [p[1], p[3]])
+
+    p[0].list = [
+        (name, p[3].type)
+        for name in p[1].list
+    ]
 
 
 def p_var_para_list(p):
     '''var_para_list :  VAR  name_list'''
+    # TODO 引用传递
     p[0] = Node("var_para_list", [p[2]])
+
+    p[0].list = p[2].list
 
 
 def p_val_para_list(p):
+    # 值传递
     '''val_para_list :  name_list
                     '''
     p[0] = Node("val_para_list", [p[1]])
+
+    p[0].list = p[1].list
 
 
 def p_routine_body_1(p):
@@ -283,7 +393,7 @@ def p_compound_stmt(p):
 
 
 def p_stmt_list(p):
-    '''stmt_list :  stmt_list  stmt  SEMI  
+    '''stmt_list :  stmt_list  stmt  SEMI
                 |  empty'''
     if len(p) == 4:
         p[0] = Node("stmt_list", [p[1], p[2]])
@@ -292,7 +402,7 @@ def p_stmt_list(p):
 
 
 def p_stmt(p):
-    '''stmt :  INTEGER  COLON  non_label_stmt  
+    '''stmt :  INTEGER  COLON  non_label_stmt
                 |  non_label_stmt'''
     if len(p) == 4:
         p[0] = Node("stmt", [p[3]])
@@ -301,14 +411,14 @@ def p_stmt(p):
 
 
 def p_non_label_stmt(p):
-    '''non_label_stmt :  assign_stmt 
-                | proc_stmt 
-                | compound_stmt 
-                | if_stmt 
-                | repeat_stmt 
-                | while_stmt 
-                | for_stmt 
-                | case_stmt 
+    '''non_label_stmt :  assign_stmt
+                | proc_stmt
+                | compound_stmt
+                | if_stmt
+                | repeat_stmt
+                | while_stmt
+                | for_stmt
+                | case_stmt
                 | goto_stmt'''
     p[0] = Node("non_label_stmt", [p[1]])
 
@@ -350,7 +460,7 @@ def p_if_stmt(p):
 
 
 def p_else_clause(p):
-    '''else_clause :  ELSE stmt 
+    '''else_clause :  ELSE stmt
                 |  empty'''
     if len(p) == 3:
         p[0] = Node("else_clause", [p[2]])
@@ -374,7 +484,7 @@ def p_for_stmt(p):
 
 
 def p_direction(p):
-    '''direction :  TO 
+    '''direction :  TO
                 | DOWNTO'''
     p[0] = Node("direction", None)
 
@@ -385,7 +495,7 @@ def p_case_stmt(p):
 
 
 def p_case_expr_list(p):
-    '''case_expr_list :  case_expr_list  case_expr  
+    '''case_expr_list :  case_expr_list  case_expr
                 |  case_expr'''
     if len(p) == 3:
         p[0] = Node("case_expr_list", [p[1], p[2]])
@@ -405,7 +515,7 @@ def p_goto_stmt(p):
 
 
 def p_expression_list(p):
-    '''expression_list :  expression_list  COMMA  expression   
+    '''expression_list :  expression_list  COMMA  expression
                 |  expression'''
     if len(p) == 4:
         p[0] = Node("expression_list-expression_list", [p[1], p[3]])
@@ -414,12 +524,12 @@ def p_expression_list(p):
 
 
 def p_expression(p):
-    '''expression :  expression  GE  expr  
-                |  expression  GT  expr  
+    '''expression :  expression  GE  expr
+                |  expression  GT  expr
                 |  expression  LE  expr
-                |  expression  LT  expr  
-                |  expression  EQUAL  expr  
-                |  expression  UNEQUAL  expr  
+                |  expression  LT  expr
+                |  expression  EQUAL  expr
+                |  expression  UNEQUAL  expr
                 |  expr'''
     if len(p) == 4:
         p[0] = Node("expression", [p[1], p[3]])
@@ -428,9 +538,9 @@ def p_expression(p):
 
 
 def p_expr(p):
-    '''expr :  expr  PLUS  term  
-                |  expr  MINUS  term  
-                |  expr  OR  term  
+    '''expr :  expr  PLUS  term
+                |  expr  MINUS  term
+                |  expr  OR  term
                 |  term'''
     if len(p) == 2:
         p[0] = Node("expr-term", [p[1]])
@@ -443,10 +553,10 @@ def p_expr(p):
 
 
 def p_term(p):
-    '''term :  term  MUL  factor  
-                |  term  DIV  factor  
-                |  term  MOD  factor 
-                |  term  AND  factor  
+    '''term :  term  MUL  factor
+                |  term  DIV  factor
+                |  term  MOD  factor
+                |  term  AND  factor
                 |  factor'''
     if len(p) == 2:
         p[0] = Node("term-factor", [p[1]])
@@ -478,8 +588,8 @@ def p_term(p):
 
 
 def p_factor_func(p):
-    '''factor : SYS_FUNCT  
-                |  SYS_FUNCT  LP  args_list  RP  
+    '''factor : SYS_FUNCT
+                |  SYS_FUNCT  LP  args_list  RP
     '''
     if len(p) == 2:
         p[0] = Node("p_factor_func", [p[1]])
@@ -494,11 +604,11 @@ def p_factor_arr(p):
 
 
 def p_factor_1(p):
-    '''factor :  NAME 
-                |  const_value  
+    '''factor :  NAME
+                |  const_value
                 |  LP  expression  RP
-                |  NOT  factor  
-                |  MINUS  factor  
+                |  NOT  factor
+                |  MINUS  factor
                 |  NAME  LB  expression  RB'''
     if len(p) == 2:
         p[0] = Node("factor", [p[1]])
@@ -517,7 +627,7 @@ def p_factor_2(p):
 
 
 def p_args_list(p):
-    """args_list :  args_list  COMMA  expression  
+    """args_list :  args_list  COMMA  expression
             |  expression"""
     if len(p) == 4:
         p[0] = Node("args_list", [p[1], p[3]])
@@ -544,7 +654,10 @@ if __name__ == '__main__':
         result = parser.parse(data, debug=1)
         print(result)
 
-        print(drawTree(result))
+        # print(drawTree(result))
+        print(table.scope())
+        for scope in scopes:
+            print(scope)
 
     else:
         while True:

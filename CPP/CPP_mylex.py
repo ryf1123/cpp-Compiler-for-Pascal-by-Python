@@ -6,7 +6,7 @@
 
 import ply.lex as lex
 import sys
-from reserved import reservedß
+from reserved import reserved
 
 
 tokens = [
@@ -101,14 +101,14 @@ class lexer:
 
     def t_REAL(self, t):
         r'\d+\.\d+'
-        print("real recognized")
+        t.value = float(t.value)
         return t
     # t_REAL          = r'\d+\.\d+'
     # def t_NUMBER(self, t):
 
     def t_INTEGER(self, t):
         r'[-]?[0-9]*[0-9]+'
-        print("NUMBER recognized")
+        t.value = int(t.value)
         return t
 
     # def t_CHAR(self, t):

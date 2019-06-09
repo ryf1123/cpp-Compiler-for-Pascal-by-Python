@@ -9,11 +9,11 @@ def list_format(list, indent=4):
     '''格式化输出用函数'''
 
     return '[%s%s%s]' % (
-        '\n' + ' '*indent if len(list) > 1 else '',
+        '\n' + ' '*indent if len(list) else '',
         (',' + '\n' + ' '*indent).join(
             str(item).replace('\n', '\n' + ' ' * indent)
             for item in list),
-        '\n' if len(list) > 1 else ''
+        '\n' if len(list) else ''
     )
 
 
@@ -44,13 +44,16 @@ class Symbol:
         }
 
         if self.var_function == 'function':
+            return Symbol('', self.type).size
+
+        elif self.var_function == 'procedure':
             return 0
 
         elif self.type in simple:
             return simple[self.type]
 
         elif self.type == 'array':
-            size = Symbol(None, self.params['data_type']).size
+            size = Symbol('', self.params['data_type']).size
 
             for (start, end) in self.params['dimension']:
                 size *= end - start + 1
@@ -60,7 +63,7 @@ class Symbol:
         elif self.type == 'record':
             size = 0
             for name, type in self.params:
-                size += Symbol(name, type).size
+                size += Symbol(name.lower(), type.lower()).size
 
             return size
 
@@ -80,7 +83,7 @@ class Symbol:
         type:           one of 'integer', 'real', 'char', 'boolean', 'array', 'record', or existing type
                         如果是函数，那么该字段表示它的返回值类型（函数只支持基础类型）
 
-        var_function:   one of 'var', 'const', 'function', 'type'
+        var_function:   one of 'var', 'const', 'function', 'procedure', 'type'
 
         offset:         该符号位于对应的作用域中的偏移量
 
@@ -95,27 +98,28 @@ class Symbol:
                             'data_type': 'integer',
                             'dimension': [(0, 100), (0, 1000), ...]
                         }
-                        如果是 record 那么 params 依照以下的 list 传递结构：
+                        如果是 record 那么 params 依照以下的 list 传递结构：（其中 type 可能是复杂类型）
                         [
                             (name1, type1),
                             (name2, type2),
                             ...
-                        ] 
-                        其中 type 可能是复杂类型
+                        ]
+                        如果是 const 那么 params 传递常量的值。
         '''
 
-        self.name = name
-        self.type = type
+        self.name = name.lower()
+        self.type = type.lower()
         self.var_function = var_function
         self.offset = offset
         self.params = params
         self.size = self._get_size()
 
     def __str__(self):
-        return 'Symbol(`%s`, %s, %s)' % (
+        return 'Symbol(`%s`, %s, %s%s)' % (
             str(self.name),
             str(self.type),
-            str(self.var_function))
+            str(self.var_function),
+            ', ' + str(self.params) if self.params is not None else '')
 
 
 class Scope:
@@ -133,13 +137,18 @@ class Scope:
         self.labels = set()
 
     def __str__(self):
-        return 'Scope(`%s`, symbols=%s)' % (
+        return 'Scope(`%s`, symbols=%s, temps=%s)' % (
             str(self.name),
             list_format(list(self.symbols.values())),
+            list_format(list(self.temps.values())),
         )
 
     def define(self, name, type, var_function='var', params=None):
         '''定义一个新符号'''
+
+        name = name.lower()
+        type = type.lower()
+
         if name in self.symbols:
             sys.exit('Name `%s` is already defined. ' % name)
 
@@ -201,24 +210,33 @@ class Table:
         '''获得当前作用域名'''
         return self.table[-1].name
 
+    def scope(self):
+        '''获得当前作用域'''
+        return self.table[-1]
+
     def get_identifier(self, name, index=None):
         '''按照作用域依次查找一个名字'''
 
         if index is None:
             index = len(self.table) - 1
         if index == -1:
-            return None
+            raise ValueError('Name `%s` is not defined. ' % name)
 
         scope = self.table[index]
 
-        if name in scope.symbols:
-            return scope.symbols[name]
-        else:
+        try:
+            return scope.get(name)
+        except:
             return self.get_identifier(name, index - 1)
 
     def set_identifier(self, name, type, var_function='var', params=None):
         '''定义一个新名字'''
-        return self.table[-1].define(name, type, var_function, params)
+
+        # 函数因为在定义时会自动增加一层作用域，因此为了使得它定义在自己之前的作用域中，需要这样操作。
+        if var_function in ['function', 'procedure']:
+            return self.table[-2].define(name, type, var_function, params)
+        else:
+            return self.table[-1].define(name, type, var_function, params)
 
     define = set_identifier
 
@@ -228,7 +246,7 @@ class Table:
     def get_label(self):
         return self.table[-1].label()
 
-    def add_scope(self, name, type, return_type):
+    def add_scope(self, name, type, return_type=None):
         '''增加一层作用域'''
         scope = self.table[-1]
         self.table.append(Scope(
@@ -238,7 +256,9 @@ class Table:
 
     def del_scope(self):
         '''删除一层作用域'''
-        return self.table.pop()
+        scope = self.table.pop()
+        print(scope)
+        return scope
 
 
 if __name__ == '__main__':
@@ -247,6 +267,7 @@ if __name__ == '__main__':
         ('ID', 'integer'),  # 4
         ('name', 'char')  # 1
     ])
+    t.add_scope('f', 'function', 'integer')
     t.define('Student', 'record', 'type', [
         ('name', 'char'),  # 1
         ('card', 'IDCard')  # 4 + 1
@@ -257,3 +278,5 @@ if __name__ == '__main__':
         'dimension': [(1, 100)]  # 100
     })
     print(t.get_identifier('students').size)  # (1 + (4+1)) * 100
+    a = t.get_identifier('?')
+    print(a)
