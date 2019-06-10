@@ -305,6 +305,8 @@ def p_function_decl(p):
     '''function_decl : function_head  SEMI  sub_routine  SEMI'''
     p[0] = Node("function_decl", [p[1], p[3]])
 
+    emit("RETURN", None, p[1].symbol)
+
     scope = table.del_scope()
     scopes.append(scope)
 
@@ -313,19 +315,26 @@ def p_function_head(p):
     '''function_head :  FUNCTION  function_name  parameters  COLON  simple_type_decl '''
     p[0] = Node("function_head", [p[3], p[5]])
 
-    table.define(p[2], p[5].type, 'function', p[3].list)
-
+    table.define('_return', p[5].type, 'function', p[3].list)
     for name, type in p[3].list:
         table.define(name, type)
 
     table.scope().return_type = p[5].type
+    table.get_identifier(p[2].name).type = p[5].type
+
+    symbol = table.get_identifier('_return')
+    p[0].symbol = symbol
+    emit("LABEL", p[2].name)
 
 
 def p_function_name(p):
     '''function_name : NAME '''
-    p[0] = p[1]
+    p[0] = Node("function_name", p[1])
 
+    table.define(p[1], 'integer', 'function')
     table.add_scope(p[1], 'function', 'integer')
+    p[0].name = p[1]
+    
 
 
 def p_procedure_decl(p):
@@ -464,8 +473,11 @@ def p_non_label_stmt(p):
 def p_assign_stmt_1(p):
     '''assign_stmt :  NAME  ASSIGN  expression'''
     p[0] = Node("assign_stmt", [p[3]])
-
+  
     symbol = table.get_identifier(p[1])
+
+    if symbol.var_function == 'function':
+        symbol = table.get_identifier('_return')
     emit('+', symbol, p[3], 0)
 
 
@@ -717,6 +729,9 @@ def p_expr(p):
         if p[2] == 'or':
             symbol = table.get_temp('boolean')
         else:
+            print(type_of_node(p[1]))
+            print(type_of_node(p[3]))
+            
             if type_of_node(p[1]) != type_of_node(p[3]):
                 raise ValueError('Type mismatch. ')
             symbol = table.get_temp(type_of_node(p[1]))
@@ -792,7 +807,14 @@ def p_factor_function(p):
     p[0] = Node("p_factor_function", [p[3]])
 
     p[0].value = None
-    p[0].type = None
+    p[0].type = table.get_identifier(p[1]).type
+
+    for item in p[3].list:
+        emit("PARAM", None, item)
+    
+    symbol = table.get_temp(p[0].type)
+    emit("CALL", symbol, p[1])
+    p[0].symbol = symbol
 
 
 def p_factor_array(p):
@@ -871,10 +893,13 @@ def p_factor_2(p):
 def p_args_list(p):
     """args_list :  args_list  COMMA  expression
             |  expression"""
+
     if len(p) == 4:
         p[0] = Node("args_list", [p[1], p[3]])
+        p[0].list = p[1].list + [p[3]]
     elif len(p) == 2:
         p[0] = Node("expression", [p[1]])
+        p[0].list = [p[1]] 
 
 
 # 空产生式
