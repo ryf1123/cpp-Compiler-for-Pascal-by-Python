@@ -39,7 +39,7 @@ class Symbol:
         simple = {
             'integer': 4,
             'real': 8,
-            'char': 1,
+            'char': 1,  # TODO
             'boolean': 1,
         }
 
@@ -115,12 +115,19 @@ class Symbol:
         self.size = self._get_size()
 
     def __str__(self):
-        return 'Symbol(`%s`, %s, %s%s)' % (
+        return 'Symbol(`%s`, %s, %s, %s%s)' % (
             str(self.name),
             str(self.type),
             str(self.var_function),
+            str(self.offset),
             ', ' + str(self.params) if self.params is not None else '')
 
+    def get_params(self):
+        if self.params is not None:
+            return self.params
+        
+        symbol = Table().scope().get_identifier(self.type)
+        return get_params(symbol)
 
 class Scope:
     '''作用域类'''
@@ -277,6 +284,4 @@ if __name__ == '__main__':
         'data_type': 'Student',  # 1 + (4+1)
         'dimension': [(1, 100)]  # 100
     })
-    print(t.get_identifier('students').size)  # (1 + (4+1)) * 100
-    a = t.get_identifier('?')
-    print(a)
+    print(t)  # (1 + (4+1)) * 100
