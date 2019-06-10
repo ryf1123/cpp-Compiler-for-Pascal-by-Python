@@ -233,9 +233,9 @@ class Table:
         scope = self.table[index]
 
         try:
-            return scope.get(name)
+            return scope.get(name.lower())
         except:
-            return self.get_identifier(name, index - 1)
+            return self.get_identifier(name.lower(), index - 1)
 
     def set_identifier(self, name, type, var_function='var', params=None):
         '''定义一个新名字'''
