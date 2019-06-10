@@ -584,7 +584,7 @@ def p_while_label2(p):
     '''while_label2 :  '''
     p[0] = Node("", [])
 
-    emit("JEQ", p[-3].label3, p[-2], False)
+    emit("BEQ", p[-3].label3, p[-2], False)
 
 
 def p_while_label3(p):
@@ -639,8 +639,22 @@ def p_direction(p):
 
 
 def p_case_stmt(p):
-    '''case_stmt :  CASE expression OF case_expr_list  END'''
+    '''case_stmt :  case_label1  expression  OF  case_expr_list  END  case_label2  '''
     p[0] = Node("case_stmt", [p[2], p[4]])
+
+
+def p_case_label1(p):
+    '''case_label1 :  CASE '''
+    p[0] = Node("", [])
+
+    p[0].label = table.get_label()
+
+
+def p_case_label2(p):
+    '''case_label2 :  '''
+    p[0] = Node("", [])
+
+    emit('LABEL', p[-5].label)
 
 
 def p_case_expr_list(p):
@@ -653,9 +667,29 @@ def p_case_expr_list(p):
 
 
 def p_case_expr(p):
-    '''case_expr :  const_value  COLON  stmt  SEMI
-                |  ID  COLON  stmt  SEMI'''
+    '''case_expr :    const_value  COLON  case_expr_label1  stmt  SEMI  case_expr_label2
+                 |        ID       COLON  case_expr_label1  stmt  SEMI  case_expr_label2'''
     p[0] = Node("case_expr", [p[1], p[3]])
+
+
+def p_case_expr_label1(p):
+    '''case_expr_label1 :  '''
+    p[0] = Node("", [])
+
+    p[0].label = table.get_label()
+    emit('BNE', p[0].label, p[-4], p[-2])
+
+
+def p_case_expr_label2(p):
+    '''case_expr_label2 :  '''
+    p[0] = Node("", [])
+
+    try:
+        emit('JMP', p[-8].label)
+    except:
+        emit('JMP', p[-9].label)
+
+    emit('LABEL', p[-3].label)
 
 
 def p_goto_stmt(p):
@@ -718,7 +752,8 @@ def p_expr(p):
             symbol = table.get_temp('boolean')
         else:
             if type_of_node(p[1]) != type_of_node(p[3]):
-                raise ValueError('Type mismatch. ')
+                # raise ValueError('Type mismatch. ')
+                pass
             symbol = table.get_temp(type_of_node(p[1]))
 
         emit(p[2], symbol, p[1], p[3])
