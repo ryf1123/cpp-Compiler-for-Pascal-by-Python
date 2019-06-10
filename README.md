@@ -1,6 +1,6 @@
 # CPP: Compiler for Pascal by Python
 
-![CPP-logo](assets/CPP-logo.jpg){:height="100px" width="100px"}
+![CPP-logo](assets/CPP-logo.jpg)
 
 ## To Do
 
