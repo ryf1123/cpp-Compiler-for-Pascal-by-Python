@@ -5,8 +5,8 @@
 | PARAM            |         | 参数      |         |
 | CALL(返回赋值)   | 结果    | 调用label |         |
 | CALL(返回不赋值) |         | 调用label |         |
-| LOADREF          | 结果    | 地址      | index   |
-| STOREREF         | 结果    | 地址      | index   |
+| LOADREF          | 结果    | 符号      | index   |
+| STOREREF         | 值      | 符号      | index   |
 | CMP              |         | 操作数1   | 操作数2 |
 | JGE              |         | Label     |         |
 | JLE              |         | Label     |         |
