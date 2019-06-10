@@ -239,12 +239,8 @@ class Table:
 
     def set_identifier(self, name, type, var_function='var', params=None):
         '''定义一个新名字'''
-
-        # 函数因为在定义时会自动增加一层作用域，因此为了使得它定义在自己之前的作用域中，需要这样操作。
-        if var_function in ['function', 'procedure']:
-            return self.table[-2].define(name, type, var_function, params)
-        else:
-            return self.table[-1].define(name, type, var_function, params)
+    
+        return self.table[-1].define(name, type, var_function, params)
 
     define = set_identifier
 
