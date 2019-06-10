@@ -125,9 +125,10 @@ class Symbol:
     def get_params(self):
         if self.params is not None:
             return self.params
-        
-        symbol = Table().scope().get_identifier(self.type)
-        return get_params(symbol)
+
+        symbol = Table().get_identifier(self.type)
+        return symbol.get_params()
+
 
 class Scope:
     '''作用域类'''
