@@ -7,13 +7,9 @@
 | CALL(返回不赋值) |         | 调用label |         |
 | LOADREF          | 结果    | 符号      | index   |
 | STOREREF         | 值      | 符号      | index   |
-| CMP              |         | 操作数1   | 操作数2 |
-| JGE              |         | Label     |         |
-| JLE              |         | Label     |         |
-| JL               |         | Label     |         |
-| JG               |         | Label     |         |
-| JE               |         | Label     |         |
-| JNE              |         | Label     |         |
+| SLT              | 结果     | 操作数1   | 操作数2 |
+| BNE              | 比较1        | 比较2     | label        |
+| BEQ              | 比较1        | 比较2     | label        |
 | JMP              |         | Label     |         |
 | LABEL            |         | Label     |         |
 | SCAN             |         | 参数      |         |
