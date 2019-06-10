@@ -33,7 +33,6 @@ def emit(op, lhs, op1=None, op2=None):
         op1 = op1.symbol
     elif hasattr(op1, 'value'):
         op1 = op1.value
-        
 
     if hasattr(op2, 'symbol'):
         op2 = op2.symbol
@@ -473,9 +472,8 @@ def p_assign_stmt_1(p):
 def p_assign_stmt_2(p):
     '''assign_stmt :  NAME LB expression RB ASSIGN expression'''
     p[0] = Node("assign_stmt", [p[3], p[6]])
-    
-    emit('STOREREF', p[6], p[1], p[3])
 
+    emit('STOREREF', p[6], p[1], p[3])
 
 
 def p_assign_stmt_3(p):
@@ -483,6 +481,7 @@ def p_assign_stmt_3(p):
     p[0] = Node("assign_stmt", [p[4]])
 
     emit('STOREREF', p[5], p[1], p[3])
+
 
 def p_proc_stmt(p):
     '''proc_stmt :  NAME
@@ -496,11 +495,44 @@ def p_proc_stmt(p):
         p[0] = Node("proc_stmt", [p[3]])
 
 
-def p_if_stmt(p):
-    '''if_stmt :  IF  expression  THEN  stmt  else_clause'''
-    
-    p[0] = Node("if_stmt", [p[2], p[4], p[5]])
+def p_if_stmt_with_else(p):
+    '''if_stmt :  IF  expression  THEN  if_label1  stmt  if_label2  ELSE  stmt  if_label3'''
+    #     0       1       2        3        4       5       6        7     8        9
+    p[0] = Node("if_stmt", [p[2], p[5], p[8]])
 
+
+def p_if_stmt_without_else(p):
+    '''if_stmt :  IF  expression  THEN  if_label1  stmt  if_label2  empty  empty  if_label3'''
+    #     0       1       2        3        4       5       6         7      8        9
+    p[0] = Node("if_stmt", [p[2], p[5], p[8]])
+
+
+def p_if_label1(p):
+    '''if_label1 :  '''
+
+    p[0] = Node("", [])
+
+    p[0].label2 = table.get_label()
+    p[0].label3 = table.get_label()
+
+    emit('BEQ', p[0].label2, p[-2], False)
+
+
+def p_if_label2(p):
+    '''if_label2 :  '''
+
+    p[0] = Node("", [])
+
+    emit('JMP', p[-2].label3)
+    emit('LABEL', p[-2].label2)
+
+
+def p_if_label3(p):
+    '''if_label3 :  '''
+
+    p[0] = Node("", [])
+
+    emit('LABEL', p[-5].label3)
 
 
 def p_else_clause(p):
@@ -513,24 +545,97 @@ def p_else_clause(p):
 
 
 def p_repeat_stmt(p):
-    '''repeat_stmt :  REPEAT  stmt_list  UNTIL  expression'''
+    '''repeat_stmt :  REPEAT  repeat_label1  stmt_list  UNTIL  expression  repeat_label2'''
     p[0] = Node("repeat_stmt", [p[2], p[4]])
 
 
+def p_repeat_label1(p):
+    '''repeat_label1 :  '''
+    p[0] = Node("", [])
+
+    p[0].label = table.get_label()
+    emit('LABEL', p[0].label)
+
+
+def p_repeat_label2(p):
+    '''repeat_label2 :  '''
+
+    p[0] = Node("", [])
+
+    emit('JNE', p[-4].label, p[-1], False)
+
+
 def p_while_stmt(p):
-    '''while_stmt :  WHILE  expression  DO stmt'''
+    '''while_stmt :  WHILE  while_label1  expression  DO  while_label2  stmt  while_label3'''
     p[0] = Node("while_stmt", [p[2], p[4]])
 
 
+def p_while_label1(p):
+    '''while_label1 :  '''
+    p[0] = Node("", [])
+
+    p[0].label1 = table.get_label()
+    p[0].label3 = table.get_label()
+
+    emit('LABEL', p[0].label1)
+
+
+def p_while_label2(p):
+    '''while_label2 :  '''
+    p[0] = Node("", [])
+
+    emit("JEQ", p[-3].label3, p[-2], False)
+
+
+def p_while_label3(p):
+    '''while_label3 :  '''
+    p[0] = Node("", [])
+
+    emit("JMP", p[-5].label1)
+    emit("LABEL", p[-5].label3)
+
+
 def p_for_stmt(p):
-    '''for_stmt :  FOR  NAME  ASSIGN  expression  direction  expression  DO stmt'''
+    '''for_stmt :  FOR  NAME  ASSIGN  expression  direction  expression  DO  for_label1  stmt  for_label2'''
     p[0] = Node("while_stmt", [p[4], p[5], p[6], p[8]])
+
+
+def p_for_label1(p):
+    '''for_label1 :  '''
+    p[0] = Node("", [])
+
+    symbol = table.get_identifier(p[-6])
+    emit('+', symbol, p[-4], 0)
+
+    p[0].label1 = table.get_label()
+    p[0].label2 = table.get_label()
+    p[0].symbol = symbol
+
+    emit('LABEL', p[0].label1)
+
+
+def p_for_label2(p):
+    '''for_label2 :  '''
+    p[0] = Node("", [])
+
+    emit('BEQ', p[-2].label2, p[-2].symbol, p[-4])
+
+    if p[-5].direction == 'to':
+        emit('+', p[-2].symbol, p[-2].symbol, 1)
+    else:
+        emit('-', p[-2].symbol, p[-2].symbol, 1)
+
+    emit('JMP', p[-2].label1)
+
+    emit('LABEL', p[-2].label2)
 
 
 def p_direction(p):
     '''direction :  TO
-                | DOWNTO'''
+                 | DOWNTO'''
     p[0] = Node("direction", None)
+
+    p[0].direction = p[1]
 
 
 def p_case_stmt(p):
@@ -613,7 +718,7 @@ def p_expr(p):
             symbol = table.get_temp('boolean')
         else:
             if type_of_node(p[1]) != type_of_node(p[3]):
-                raise ValueError()
+                raise ValueError('Type mismatch. ')
             symbol = table.get_temp(type_of_node(p[1]))
 
         emit(p[2], symbol, p[1], p[3])
@@ -642,7 +747,7 @@ def p_term(p):
             symbol = table.get_temp('boolean')
         else:
             if type_of_node(p[1]) != type_of_node(p[3]):
-                raise ValueError()
+                raise ValueError('Type mismatch. ')
             symbol = table.get_temp(type_of_node(p[1]))
 
         emit(p[2], symbol, p[1], p[3])
@@ -701,6 +806,7 @@ def p_factor_array(p):
     emit('LOADREF', symbol, p[1], p[3])
     p[0].symbol = symbol
 
+
 def p_factor_1(p):
     '''factor :    LP  expression  RP '''
     p[0] = Node("factor", [p[2]])
@@ -754,11 +860,13 @@ def p_factor_2(p):
     symbol = table.get_identifier(p[1])
     params = symbol.get_params()
     try:
-        symbol = table.get_temp([ a_tuple for a_tuple in params if a_tuple[0] == p[3]][0][1])
+        symbol = table.get_temp(
+            [a_tuple for a_tuple in params if a_tuple[0] == p[3]][0][1])
     except IndexError:
         raise ValueError("Dot index error")
     emit('LOADREF', symbol, p[1], p[3])
     p[0].symbol = symbol
+
 
 def p_args_list(p):
     """args_list :  args_list  COMMA  expression
