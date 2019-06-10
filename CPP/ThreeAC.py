@@ -4,11 +4,12 @@ class ThreeAC(object):
     '''
         contains three address code and link to symble table
     '''
+
     def __init__(self, symtable):
         self.code = []
         self.symtable = symtable
         self.tmpoffset = {}
-    
+
     def map(self):
         for scope in self.symtable.table:
             offset = 0
@@ -23,23 +24,25 @@ class ThreeAC(object):
                     if var_entry.params != None:
                         mapoff[var] = offset
                         offset -= var_entry.size
-            
+
             for tmp in scope.temp.keys():
-                temp_var = scope.temp[tmp]
+                tmp_var = scope.temp[tmp]
                 mapoff[tmp] = tmp_var.size
 
-
-    def emit(self, op, lhs, op1, op2):
-        self.code.append([op,lhs,op1,op2])
-
+    def emit(self, op, lhs, op1=None, op2=None):
+        self.code.append([op, lhs, op1, op2])
 
     def addLinenum(self):
         for i, code in enumerate(self.code):
             self.code[i] = [str(i+1)] + code
 
-
     def display(self):
         for i, code in enumerate(self.code):
             linenum, op, lhs, op1, op2 = code
-            # ++++++
-            print("#"+linenum+","+op+","+lhs+","+op1+","+op2)
+            print('#%2s %s %s %s %s' % (
+                linenum,
+                op,
+                lhs,
+                op1,
+                op2
+            ))

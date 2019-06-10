@@ -3,11 +3,13 @@
 # 任宇凡 刘洪甫 邱兆林
 
 # This file is the yacc parse part of the whole project
-import symbol
+import symbol_table as symbol
 import ply.yacc as yacc
 import sys
 from CPP_mylex import tokens
-from tree_visual import *
+from tree_visual import Node
+import ThreeAC
+
 
 precedence = (
     ('left', 'PLUS', 'MINUS'),
@@ -16,13 +18,39 @@ precedence = (
 )
 
 table = symbol.Table()
+tac = ThreeAC.ThreeAC(table)
 
 scopes = []  # 调试用
 
 
+def emit(op, lhs, op1=None, op2=None):
+    if hasattr(lhs, 'symbol'):
+        lhs = lhs.symbol
+
+    if hasattr(op1, 'symbol'):
+        op1 = op1.symbol
+    elif hasattr(op1, 'value'):
+        op1 = op1.value
+
+    if hasattr(op2, 'symbol'):
+        op2 = op2.symbol
+    elif hasattr(op2, 'value'):
+        op2 = op2.value
+
+    tac.emit(op, lhs, op1, op2)
+
+
+def type_of_node(node):
+    if hasattr(node, 'symbol'):
+        return node.symbol.type
+
+    else:
+        return node.type
+
+
 def p_program(p):
     # '''program :  program_head  routine  DOT
-    #         | factor '''
+    #            | factor '''
     '''program :  program_head  routine  DOT '''
     p[0] = Node("program", [p[1], p[2]])
 
@@ -138,6 +166,7 @@ def p_type_decl(p):
                 |  array_type_decl
                 |  record_type_decl'''
     p[0] = Node("type_decl", [p[1]])
+
     p[0].type = p[1].type
 
 
@@ -149,28 +178,31 @@ def p_type_decl(p):
 #                     |  MINUS  const_value  DOTDOT  const_value removed
 #                     |  MINUS  const_value  DOTDOT  MINUS  const_value removed
 #                     |  NAME  DOTDOT  NAME''' removed
-
+# # TODO removed 是不需要实现的吗？
 
 def p_simple_type_decl_1(p):
     '''simple_type_decl :  SYS_TYPE'''
     p[0] = Node("imple_type_decl", [p[1]])
-    print(p[0])
+
     p[0].type = p[1]
 
 
 def p_simple_type_decl_2(p):
     '''simple_type_decl : NAME'''
     p[0] = Node("imple_type_decl", [p[1]])
+
     p[0].type = p[1]
 
 
 def p_simple_type_decl_3(p):
     '''simple_type_decl : LP  name_list  RP'''
+    # TODO 未实现
     p[0] = Node("imple_type_decl", [p[1], p[2], p[3]])
 
 
 def p_simple_type_decl_4(p):
     '''simple_type_decl : const_value  DOTDOT  const_value'''
+    # TODO 未实现
     p[0] = Node("imple_type_decl", [p[1], p[2], p[3]])
 
 
@@ -185,7 +217,6 @@ def p_array_type_decl(p):
         'data_type': p[8].type,
         'dimension': [(p[3], p[5])]
     })
-
     p[0].type = symbol.name
 
 
@@ -431,6 +462,9 @@ def p_assign_stmt_1(p):
     '''assign_stmt :  NAME  ASSIGN  expression'''
     p[0] = Node("assign_stmt", [p[3]])
 
+    symbol = table.get_identifier(p[1])
+    emit('+', symbol, p[3], 0)
+
 
 def p_assign_stmt_2(p):
     '''assign_stmt :  NAME LB expression RB ASSIGN expression'''
@@ -531,10 +565,21 @@ def p_expression(p):
                 |  expression  EQUAL  expr
                 |  expression  UNEQUAL  expr
                 |  expr'''
-    if len(p) == 4:
-        p[0] = Node("expression", [p[1], p[3]])
-    else:
+    if len(p) == 2:
         p[0] = Node("expression", [p[1]])
+
+        if hasattr(p[1], 'symbol'):
+            p[0].symbol = p[1].symbol
+        else:
+            p[0].value = p[1].value
+            p[0].type = p[1].type
+
+    else:
+        p[0] = Node("expression", [p[1], p[3]])
+
+        symbol = table.get_temp('boolean')
+        emit(p[2], symbol, p[1], p[3])
+        p[0].symbol = symbol
 
 
 def p_expr(p):
@@ -544,12 +589,25 @@ def p_expr(p):
                 |  term'''
     if len(p) == 2:
         p[0] = Node("expr-term", [p[1]])
-    elif p[2] == '+':
-        p[0] = Node("expr-PLUS", [p[1], p[3]])
-    elif p[2] == '-':
-        p[0] = Node("expr-MINUS", [p[1], p[3]])
-    elif p[2] == '|':
-        p[0] = Node("expr-OR", [p[1], p[3]])
+
+        if hasattr(p[1], 'symbol'):
+            p[0].symbol = p[1].symbol
+        else:
+            p[0].value = p[1].value
+            p[0].type = p[1].type
+
+    else:
+        p[0] = Node("expr-expr", [p[1], p[3]])
+
+        if p[2] == 'or':
+            symbol = table.get_temp('boolean')
+        else:
+            if type_of_node(p[1]) != type_of_node(p[3]):
+                raise ValueError()
+            symbol = table.get_temp(type_of_node(p[1]))
+
+        emit(p[2], symbol, p[1], p[3])
+        p[0].symbol = symbol
 
 
 def p_term(p):
@@ -560,14 +618,26 @@ def p_term(p):
                 |  factor'''
     if len(p) == 2:
         p[0] = Node("term-factor", [p[1]])
-    elif p[2] == '*':
+
+        if hasattr(p[1], 'symbol'):
+            p[0].symbol = p[1].symbol
+        else:
+            p[0].value = p[1].value
+            p[0].type = p[1].type
+
+    else:
         p[0] = Node("term-term", [p[1], p[3]])
-    elif p[2] == '/':
-        p[0] = Node("term-term", [p[1], p[3]])
-    elif p[2] == 'MOD':
-        p[0] = Node("term-term", [p[1], p[3]])
-    elif p[2] == 'and':
-        p[0] = Node("term-term", [p[1], p[3]])
+
+        if p[2] == 'and':
+            symbol = table.get_temp('boolean')
+        else:
+            if type_of_node(p[1]) != type_of_node(p[3]):
+                raise ValueError()
+            symbol = table.get_temp(type_of_node(p[1]))
+
+        emit(p[2], symbol, p[1], p[3])
+        p[0].symbol = symbol
+
 
 # the below codes are modified on this code
 # def p_factor(p):
@@ -591,33 +661,78 @@ def p_factor_func(p):
     '''factor : SYS_FUNCT
                 |  SYS_FUNCT  LP  args_list  RP
     '''
+    # TODO
     if len(p) == 2:
         p[0] = Node("p_factor_func", [p[1]])
     else:
         p[0] = Node("p_factor_func", [p[3]])
 
+    p[0].value = None
+    p[0].type = None
 
-def p_factor_arr(p):
+
+def p_factor_function(p):
     '''factor : NAME  LP  args_list  RP'''
+    # TODO
+    p[0] = Node("p_factor_function", [p[3]])
 
-    p[0] = Node("p_factor_arr", [p[3]])
+    p[0].value = None
+    p[0].type = None
+
+
+def p_factor_array(p):
+    '''factor : NAME LB expression RB '''
+    # TODO
+    p[0] = Node("p_factor_function", [p[3]])
+
+    p[0].value = None
+    p[0].type = None
 
 
 def p_factor_1(p):
-    '''factor :  NAME
-                |  const_value
-                |  LP  expression  RP
-                |  NOT  factor
-                |  MINUS  factor
-                |  NAME  LB  expression  RB'''
-    if len(p) == 2:
-        p[0] = Node("factor", [p[1]])
-    elif len(p) == 3:
-        p[0] = Node("factor", [p[2]])
-    elif len(p) == 4:
-        p[0] = Node("factor", [p[2]])
+    '''factor :    LP  expression  RP '''
+    p[0] = Node("factor", [p[2]])
+
+    if hasattr(p[2], 'symbol'):
+        p[0].symbol = p[2].symbol
     else:
-        p[0] = Node("factor", [p[3]])
+        p[0].value = p[2].value
+        p[0].type = p[2].type
+
+
+def p_factor_not(p):
+    '''factor :  NOT factor'''
+
+    p[0] = Node("factor", [p[2]])
+
+    symbol = table.get_temp(type_of_node(p[2]))
+    emit('NOT', symbol, p[2])
+    p[0].symbol = symbol
+
+
+def p_factor_minus(p):
+    '''factor :  MINUS factor'''
+
+    p[0] = Node("factor", [p[2]])
+
+    symbol = table.get_temp(type_of_node(p[2]))
+    emit('-', symbol, 0, p[2])
+    p[0].symbol = symbol
+
+
+def p_factor_name(p):
+    '''factor :  NAME'''
+    p[0] = Node('factor', [p[1]])
+
+    p[0].symbol = table.get_identifier(p[1])
+
+
+def p_factor_const(p):
+    '''factor :  const_value'''
+    p[0] = Node('factor', [p[1]])
+
+    p[0].value = p[1].value
+    p[0].type = p[1].type
 
 
 def p_factor_2(p):
@@ -659,10 +774,13 @@ if __name__ == '__main__':
         for scope in scopes:
             print(scope)
 
+        tac.addLinenum()
+        tac.display()
+
     else:
         while True:
             try:
-                data = raw_input('Type here > ')
+                data = input('Type here > ')
             except EOFError:
                 break
             if data == "q" or data == "quit":
