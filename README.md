@@ -1,4 +1,4 @@
-# cpp: Compiler for Pascal by Python
+# CPP: Compiler for Pascal by Python
 
 ![CPP-logo](assets/CPP-logo.jpg)
 
