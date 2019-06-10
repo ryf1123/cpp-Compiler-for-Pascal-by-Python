@@ -1,5 +1,7 @@
 # CPP: Compiler for Pascal by Python
 
+![CPP-logo](assets/CPP-logo.jpg)
+
 ## To Do
 
 ### Test cases: test the AST and PLY
