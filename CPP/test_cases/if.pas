@@ -11,6 +11,8 @@ begin
 	x := 1000;
 
 	if ( (x < y) and (x > y - 3) or (x - y >= 5)) then
-		x := x + 1
-    else x := x - 1;
+		if (true) then
+			x := x - 1
+		else
+			x := x;
 end.
