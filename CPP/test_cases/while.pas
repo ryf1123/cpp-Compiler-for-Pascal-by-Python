@@ -6,6 +6,11 @@ begin
 	z := 4;
 	while  x < 15 do
 	begin
+		x := 1000;
+	end;
+	
+	while  x < 15 do
+	begin
 		if ( x = 15) then
 	  		writeln(x)
 	  	else
