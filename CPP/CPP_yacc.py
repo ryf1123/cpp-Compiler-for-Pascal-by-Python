@@ -26,11 +26,14 @@ scopes = []  # 调试用
 def emit(op, lhs, op1=None, op2=None):
     if hasattr(lhs, 'symbol'):
         lhs = lhs.symbol
+    elif hasattr(lhs, 'value'):
+        lhs = lhs.value
 
     if hasattr(op1, 'symbol'):
         op1 = op1.symbol
     elif hasattr(op1, 'value'):
         op1 = op1.value
+        
 
     if hasattr(op2, 'symbol'):
         op2 = op2.symbol
@@ -458,6 +461,7 @@ def p_non_label_stmt(p):
 #         '''assign_stmt :  NAME  ASSIGN  expression
 #                     | NAME LB expression RB ASSIGN expression
 #                     | NAME  DOT  NAME  ASSIGN  expression'''
+
 def p_assign_stmt_1(p):
     '''assign_stmt :  NAME  ASSIGN  expression'''
     p[0] = Node("assign_stmt", [p[3]])
@@ -469,12 +473,16 @@ def p_assign_stmt_1(p):
 def p_assign_stmt_2(p):
     '''assign_stmt :  NAME LB expression RB ASSIGN expression'''
     p[0] = Node("assign_stmt", [p[3], p[6]])
+    
+    emit('STOREREF', p[6], p[1], p[3])
+
 
 
 def p_assign_stmt_3(p):
     '''assign_stmt :  NAME  DOT  NAME  ASSIGN  expression'''
     p[0] = Node("assign_stmt", [p[4]])
 
+    emit('STOREREF', p[5], p[1], p[3])
 
 def p_proc_stmt(p):
     '''proc_stmt :  NAME
@@ -490,7 +498,9 @@ def p_proc_stmt(p):
 
 def p_if_stmt(p):
     '''if_stmt :  IF  expression  THEN  stmt  else_clause'''
+    
     p[0] = Node("if_stmt", [p[2], p[4], p[5]])
+
 
 
 def p_else_clause(p):
@@ -682,12 +692,14 @@ def p_factor_function(p):
 
 def p_factor_array(p):
     '''factor : NAME LB expression RB '''
-    # TODO
-    p[0] = Node("p_factor_function", [p[3]])
+    # FIXME: 这个地方只有可能是在右边的数组索引，而不是左边的，所以将内容载入到临时变量里面吧
+    p[0] = Node("p_factor_array", [p[3]])
+    # FIXME: 也需要创建一个临时变量
 
-    p[0].value = None
-    p[0].type = None
-
+    symbol = table.get_identifier(p[1])
+    symbol = table.get_temp(type_of_node(symbol))
+    emit('LOADREF', symbol, p[1], p[3])
+    p[0].symbol = symbol
 
 def p_factor_1(p):
     '''factor :    LP  expression  RP '''
@@ -739,7 +751,14 @@ def p_factor_2(p):
     '''factor : NAME  DOT  NAME'''
 
     p[0] = Node("p_factor_1", [p[1], p[2], p[3]])
-
+    symbol = table.get_identifier(p[1])
+    params = symbol.get_params()
+    try:
+        symbol = table.get_temp([ a_tuple for a_tuple in params if a_tuple[0] == p[3]][0][1])
+    except IndexError:
+        raise ValueError("Dot index error")
+    emit('LOADREF', symbol, p[1], p[3])
+    p[0].symbol = symbol
 
 def p_args_list(p):
     """args_list :  args_list  COMMA  expression
