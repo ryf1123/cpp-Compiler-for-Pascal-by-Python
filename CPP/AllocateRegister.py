@@ -1,20 +1,26 @@
-from Rule import jump_list, register_list 
+from Rule import jump_list, unused_register_list 
 
-class AllocteRegister(object):
+class AllocteRegister():
     def __init__(self, symtable, threeAC):
         self.symtable = symtable
         self.code = threeAC.code
         self.symbols = []
 
-        self.unused_register = register_list.copy()
+        self.unused_register = unused_register_list.copy()
         self.used_register = []
 
+        # 基本块
         self.basic_blocks = []
+        # 接下来使用
         self.next_use = []
+        # 每个基本块对应一个label名
         self.block_label = {}
         # {[startline, endline]: label_name}
 
+        # 寄存器 存了哪些symbol
         self.register_symbol = {}
+
+        # symbol 被存在哪些寄存器里
         self.symbol_register = {}
 
         # initialization
@@ -22,26 +28,26 @@ class AllocteRegister(object):
             self.register_symbol[reg] = ''
         
         # add symbol
-        for scope in self.symtable.table:
-            scope_name = scope.name
-            for var in scope.symbols.keys():
-                var_entry = self.symtable.get_identifier(var)
-                if var_entry != None:
-                    self.symbols.append(var)
+        # for scope in self.symtable.table:
+        #     scope_name = scope.name
+        #     for var in scope.symbols.keys():
+        #         var_entry = self.symtable.get_identifier(var)
+        #         if var_entry != None:
+        #             self.symbols.append(var)
                 
-                if var_entry.var_function == 'record':
-                    for param in var_entry.params:
-                        self.symbols.append(var+'_'+param[0])
-                        # self.symbols.append('self_'+param[0])
+        #         if var_entry.var_function == 'record':
+        #             for param in var_entry.params:
+        #                 self.symbols.append(var+'_'+param[0])
+        #                 # self.symbols.append('self_'+param[0])
 
-            for temp in scope.temps.keys():
-                if self.symtable.get_identifier(temp) != None:
-                    self.symbols.append(temp)
+        #     for temp in scope.temps.keys():
+        #         if self.symtable.get_identifier(temp) != None:
+        #             self.symbols.append(temp)
             
-            self.symbols = list(set(self.symbols))
+        #     self.symbols = list(set(self.symbols))
 
-        for sym in self.symbols:
-            self.symbol_register[sym] = ''
+        # for sym in self.symbols:
+        #     self.symbol_register[sym] = ''
 
 
     def get_basic_block(self):
@@ -57,27 +63,26 @@ class AllocteRegister(object):
         block_part.append(0)
 
         for i in range(len(self.code)):
-            code_line = code[i]
-            if code_line[1].lower() in jump_list-['jmp']:
-                if code_line[3] != None:
-                    block_part.append(self.label_line(code_line[3]))
-                else:
-                    block_part.append(self.label_line(code_line[5]))
+            code_line = self.code[i]
+            if code_line[1].lower() in ['bne', 'beq', 'jmp']:
+                if code_line[2] != None:
+                    block_part.append(self.label_line(code_line[2]))
 
-                if i != len(code)-1:
+                if i != len(self.code)-1:
                     block_part.append(self.code[i+1][0])
-            
-            elif code_line[1] == 'LABEL' and code_line[2] == 'FUNC' or code_line[1] == 'RETURN':
+            elif code_line[1].lower() in ['label']:
                 block_part.append(code_line[0])
-
+            elif code_line[1].lower() in ['call', 'return'] and i != len(self.code)-1:
+                block_part.append(self.code[i+1][0])
+  
         block_part = list(set(block_part))
         block_part.sort()
 
         for i in range(len(block_part)):
             if i != len(block_part)-1:
-                self.basic_blocks.append([block_part[i], block_part[i+1]-1])
+                self.basic_blocks.append((block_part[i], block_part[i+1]-1))
             else:
-                self.basic_blocks.append([block_part[i], self.code[-1][0]])
+                self.basic_blocks.append((block_part[i], self.code[-1][0]))
 
         print(self.basic_blocks)        
 
@@ -86,24 +91,28 @@ class AllocteRegister(object):
         '''
             map every block into a label name 
         '''
-        for block in self.basic_blocks:
-            self.block_label[block] = ''
+        label_name = ''
+        # for block in self.basic_blocks:
+        #     self.block_label[block] = ''
         
         for index, block in enumerate(self.basic_blocks):
-            if self.code[block[0]][1] == 'LABEL':
-                label_name = self.code[block[0]][3]
+            if self.code[block[0]][1].lower() == 'label':
+                label_name = self.code[block[0]][2]
                 self.block_label[block] = label_name
             
             for i in range(index+1, len(self.basic_blocks)):
                 block = self.basic_blocks[i]
-                if self.code[block[0]][1] != 'LABEL':
+                if self.code[block[0]][1].lower() != 'label':
                     self.block_label[block] = label_name
                 else:
                     break
 
-        for block in self.basic_blocks:
-            if self.block_label[block] = '':
-                self.block_label = 'main' 
+        # for block in self.basic_blocks:
+        #     print(self.block_label[block])
+        #     if self.block_label[block] == None:
+        #         self.block_label = 'main' 
+        
+        # print(self.block_label)
 
 
     def label_line(self, label_name):
@@ -111,21 +120,24 @@ class AllocteRegister(object):
             find line num by label name 
         '''
         for i in range(len(self.code)):
-            if self.code[i][1] == 'LABEL':
-                if self.code[i][3] == None:
-                    if self.code[i][5] == label_name:
-                        return self.code[i][0]
-                else:
-                    if self.code[i][3] == label_name:
-                        return self.code[i][0]
+            if self.code[i][1].lower() == 'label':
+                if self.code[i][2] == label_name:
+                    return self.code[i][0]
+
+    
+    def line_block(self, line_num):
+        for i in range(len(self.basic_blocks)):
+            block = self.basic_blocks[i]
+            if block[0] <= line_num and block[1] >= line_num:
+                return i
    
 
     def iterate_block(self):
         for i, block in enumerate(self.basic_blocks):
             self.next_use.append([])
             self.block_assign(i)
+        
 
-    
     def block_assign(self, block_index):
         '''
             read the code in the given block from the last line to first line
@@ -135,9 +147,10 @@ class AllocteRegister(object):
         block = self.basic_blocks[block_index]
         start, end = block
         code = self.code[start-1:end]
+        preline = {}
 
-        for sym in self.symbols:
-            preline[sym] = float("inf")
+        # for sym in self.symbols:
+        #     preline[sym] = float("inf")
         
         for i in range(len(code), 0, -1):
             line = {}
@@ -154,14 +167,15 @@ class AllocteRegister(object):
             if op2 in self.symbols:
                 line[op2] = code_line[0]
             
-            for sym in self.symbols:
-                if sym not in code_line:
-                    line[sym] = preline[sym]
+            # for sym in self.symbols:
+            #     if sym not in code_line:
+            #         line[sym] = preline[sym]
                 
             self.next_use[block_index].append(line)
             preline = line.copy()
 
         self.next_use[block_index] = list(reversed(self.next_use[block_index]))
+        # print(self.next_use[block_index])
 
 
     def get_block_maxuse(self, block_index, line_num):
@@ -185,31 +199,31 @@ class AllocteRegister(object):
         '''
             分配寄存器
         '''
-        code_line = self.code[line_num-1]
+        code_line = self.code[line_num]
+        
         start, end = self.basic_blocks[block_index]
         reg = ''
         msg = ''
         
-        # lhs = op1 OP op2
-        lhs = code_line[2]
-        op1 = code_line[3]
-        op2 = code_line[4]
+        line_num, operation, lhs, op1, op2 = code_line
         
-        if lhs not in self.symbols:
-            return (lhs, 'replace nothing')
+        # TODO 寄存器选择优化
+        # if lhs not in self.symbols:
+        #     return (lhs, 'replace nothing')
 
-        if line_num < end:
-            next_use_block = self.next_use[block_index][line_num+1-start] 
-        else:
-            next_use_block = {}
-            for sym in self.symbols:
-                next_use_block[sym] = float("inf")
+        # if line_num < end:
+        #     print(line_num+1-start)
+        #     next_use_block = self.next_use[block_index][line_num+1-start] 
+        # else:
+        #     next_use_block = {}
+        #     for sym in self.symbols:
+        #         next_use_block[sym] = float("inf")
 
-        if op1 in self.symbols and self.symbol_register[op1]!='' and next_use_block == float("inf"):
+        if op1 in self.symbol_register:
             reg = self.symbol_register[op1]
             msg = 'replace op1'
 
-        elif op2 in self.symbols and self.symbol_register[op2]!='' and next_use_block == float("inf"):
+        elif op2 in self.symbol_register:
             reg = self.symbol_register[op2]
             msg = 'replace op2'
 
@@ -219,13 +233,13 @@ class AllocteRegister(object):
             self.used_register.append(reg)
             msg = 'did not replace'
         
-        elif next_use_block[lhs]!=float("inf") or all_mem =True:
+        else:
             var = self.get_block_maxuse(block_index, line_num)
             reg = self.symbol_register[var]
             msg = 'replace next use' + var 
-        else:
-            reg = lhs
-            msg = 'replace nothing'
+        # else:
+        #     reg = lhs
+        #     msg = 'replace nothing'
         return (reg, msg)
           
 

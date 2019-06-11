@@ -9,6 +9,8 @@ import sys
 from CPP_mylex import tokens
 from tree_visual import Node
 import ThreeAC
+import AllocateRegister
+import CodeGen
 
 
 precedence = (
@@ -1046,15 +1048,17 @@ if __name__ == '__main__':
         data = f.read()
         f.close()
         result = parser.parse(data, debug=1)
-        print(result)
+        # print(result)
 
         # print(drawTree(result))
-        print(table.scope())
-        for scope in scopes:
-            print(scope)
+        # print(table.scope())
+        # for scope in scopes:
+        #     print(scope)
 
         tac.addLinenum()
         tac.display()
+        allocReg = AllocateRegister.AllocteRegister(table, tac)
+        codegen = CodeGen.CodeGen(table, tac, allocReg)
 
     else:
         while True:
