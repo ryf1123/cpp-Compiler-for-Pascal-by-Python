@@ -315,7 +315,7 @@ def p_function_head(p):
     '''function_head :  FUNCTION  function_name  parameters  COLON  simple_type_decl '''
     p[0] = Node("function_head", [p[3], p[5]])
 
-    table.define('_return', p[5].type, 'function', p[3].list)
+    table.define('_return', p[5].type, 'var', p[3].list)
     for name, type in p[3].list:
         table.define(name, type)
 
@@ -499,16 +499,45 @@ def p_assign_stmt_3(p):
     emit('STOREREF', p[5], p[1], p[3])
 
 
-def p_proc_stmt(p):
+def p_proc_stmt_proc(p):
     '''proc_stmt :  NAME
-                |  NAME  LP  args_list  RP
-                |  SYS_PROC
-                |  SYS_PROC  LP  expression_list  RP
-                |  READ  LP  factor  RP'''
+                |  NAME  LP  args_list  RP'''
     if len(p) == 2:
         p[0] = Node("proc_stmt", [p[1]])
-    else:
-        p[0] = Node("proc_stmt", [p[3]])
+
+    elif len(p) == 5:
+        p[0] = Node("proc_stmt", [p[1], p[3]])
+        for name in p[3].list:
+            emit("PARAM", None, name)
+
+    emit("CALL", None, p[1])
+    
+
+def p_proc_stmt_sysproc(p):
+    '''proc_stmt : SYS_PROC
+                |  SYS_PROC  LP  expression_list  RP'''
+    if len(p) == 2:
+        p[0] = Node("proc_stmt", [p[1]])
+        if p[1].lower() == 'write':
+            emit("PRINT", None)
+        elif p[1].lower() == 'writeln':
+            emit("PRINTLN", None)
+    
+    elif len(p) == 5:
+        p[0] = Node("proc_stmt", [p[1], p[3]])
+
+        if p[1].lower() in ['write', 'writeln']:           
+            for value in p[3].list:
+                emit("PRINT", None, value)
+        
+        if p[1].lower() == 'writeln':
+            emit("PRINTLN", None)
+
+            
+
+def p_proc_stmt_read(p):
+    '''proc_stmt : READ  LP  factor  RP'''
+    p[0] = Node("proc_stmt", [p[3]])
 
 
 def p_if_stmt_with_else(p):
@@ -718,8 +747,17 @@ def p_expression_list(p):
                 |  expression'''
     if len(p) == 4:
         p[0] = Node("expression_list-expression_list", [p[1], p[3]])
+        if hasattr(p[3], 'symbol'):
+            p[0].list = p[1].list + [p[3].symbol]
+        else:
+            p[0].list = p[1].list + [p[3].value]
+
     elif len(p) == 2:
         p[0] = Node("expression_list-expression", [p[1]])
+        if hasattr(p[1], 'symbol'):
+            p[0].list = [p[1].symbol]
+        else:
+            p[0].list = [p[1].value]
 
 
 def p_expression(p):
