@@ -10,10 +10,12 @@ type
 var x: boolean; q:boolean; newton: people; peoples: people_arr;
 begin
     q := true and true and true and not flag;
-    x := (a + 13) div 5 mod 1;
-    eistein.sex := 'm';
-    newton.sex := 'm';
-    newton.not_score := 100;
-    peoples[1] := newton;
-    peoples[10] := eistein;
+    x := (a + 13) DIV 5 mod 1;
+    peoples[x] := 1;
+    x := peoples[0];
+
+    newton.score := 1;
+    x :=newton.score;
+
+
 end.

@@ -25,6 +25,10 @@
 - [x] types.pas
 - [x] while.pas
 
+## MIPS模拟器
+
+MAC安装包：`./QtSpim.mpkg`
+
 ## Bug报备
 
 直接群里说
