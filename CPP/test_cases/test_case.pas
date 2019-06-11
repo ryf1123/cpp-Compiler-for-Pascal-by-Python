@@ -2,6 +2,8 @@ PROGRAM Greeting;
 
 CONST
 x = 4;
+
+var y : integer;
    
 BEGIN
 

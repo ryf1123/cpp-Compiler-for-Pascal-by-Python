@@ -129,12 +129,19 @@ class Symbol:
         symbol = Table().get_identifier(self.type)
         return symbol.get_params()
 
+    def get_type(self):
+        if self.type in ['integer', 'real', 'char', 'boolean', 'array', 'record']:
+            return self.type
+
+        symbol = Table().get_identifier(self.type)
+        return symbol.get_type()
+
 
 class Scope:
     '''作用域类'''
 
-    def __init__(self, name=None, type=None, return_type=None, width=0):
-        self.name = name
+    def __init__(self, name, type=None, return_type=None, width=0):
+        self.name = name.lower()
         self.type = type
         self.return_type = return_type
         self.width = width
@@ -239,7 +246,7 @@ class Table:
 
     def set_identifier(self, name, type, var_function='var', params=None):
         '''定义一个新名字'''
-    
+
         return self.table[-1].define(name, type, var_function, params)
 
     define = set_identifier

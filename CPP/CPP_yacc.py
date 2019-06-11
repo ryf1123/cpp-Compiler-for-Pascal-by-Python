@@ -105,7 +105,8 @@ def p_const_expr(p):
     # print("[ *** ]: ", p[1])
     p[0] = Node("const_expr", [p[1], p[3]])
 
-    table.define(p[1], p[3].type, 'const', p[3].value)
+    symbol = table.define(p[1], p[3].type, 'const', p[3].value)
+    emit('+', symbol, p[3], 0)
 
 
 def p_const_value(p):
@@ -354,7 +355,7 @@ def p_procedure_head(p):
 
     for name, type in p[3].list:
         table.define(name, type)
-    
+
     emit("LABEL", p[2].name)
 
 
@@ -448,12 +449,19 @@ def p_stmt_list(p):
 
 
 def p_stmt(p):
-    '''stmt :  INTEGER  COLON  non_label_stmt
-                |  non_label_stmt'''
-    if len(p) == 4:
-        p[0] = Node("stmt", [p[3]])
+    '''stmt :  stmt_label  non_label_stmt
+            |  non_label_stmt'''
+    if len(p) == 3:
+        p[0] = Node("stmt", [p[2]])
     else:
         p[0] = Node("stmt", [p[1]])
+
+
+def p_stmt_label(p):
+    '''stmt_label :  INTEGER  COLON'''
+    p[0] = Node("stmt_label", [p[1]])
+
+    emit('LABEL', str(p[1]))
 
 
 def p_non_label_stmt(p):
@@ -477,11 +485,16 @@ def p_non_label_stmt(p):
 def p_assign_stmt_1(p):
     '''assign_stmt :  NAME  ASSIGN  expression'''
     p[0] = Node("assign_stmt", [p[3]])
-  
+
     symbol = table.get_identifier(p[1])
 
     if symbol.var_function == 'function':
-        symbol = table.get_identifier('_return')
+        if table.scope().name.endswith('.' + symbol.name):
+            symbol = table.get_identifier('_return')
+
+    if symbol.var_function != 'var':
+        raise ValueError('`%s` is not a var. ' % symbol.name)
+
     emit('+', symbol, p[3], 0)
 
 
@@ -489,12 +502,28 @@ def p_assign_stmt_2(p):
     '''assign_stmt :  NAME LB expression RB ASSIGN expression'''
     p[0] = Node("assign_stmt", [p[3], p[6]])
 
+    symbol = table.get_identifier(p[1])
+
+    if symbol.var_function != 'var':
+        raise ValueError('`%s` is not a var. ' % symbol.name)
+
+    if symbol.get_type() != 'array':
+        raise ValueError('`%s` is not an array. ' % symbol.name)
+
     emit('STOREREF', p[6], p[1], p[3])
 
 
 def p_assign_stmt_3(p):
     '''assign_stmt :  NAME  DOT  NAME  ASSIGN  expression'''
     p[0] = Node("assign_stmt", [p[4]])
+
+    symbol = table.get_identifier(p[1])
+
+    if symbol.var_function != 'var':
+        raise ValueError('`%s` is not a var. ' % symbol.name)
+
+    if symbol.get_type() != 'record':
+        raise ValueError('`%s` is not a record. ' % symbol.name)
 
     emit('STOREREF', p[5], p[1], p[3])
 
@@ -511,7 +540,7 @@ def p_proc_stmt_proc(p):
             emit("PARAM", None, name)
 
     emit("CALL", None, p[1])
-    
+
 
 def p_proc_stmt_sysproc(p):
     '''proc_stmt : SYS_PROC
@@ -522,22 +551,22 @@ def p_proc_stmt_sysproc(p):
             emit("PRINT", None)
         elif p[1].lower() == 'writeln':
             emit("PRINTLN", None)
-    
+
     elif len(p) == 5:
         p[0] = Node("proc_stmt", [p[1], p[3]])
 
-        if p[1].lower() in ['write', 'writeln']:           
+        if p[1].lower() in ['write', 'writeln']:
             for value in p[3].list:
                 emit("PRINT", None, value)
-        
+
         if p[1].lower() == 'writeln':
             emit("PRINTLN", None)
-            
+
 
 def p_proc_stmt_read(p):
     '''proc_stmt : READ  LP  factor  RP'''
     p[0] = Node("proc_stmt", [p[3]])
-    
+
     if hasattr(p[3], 'symbol'):
         emit("INPUT", p[3].symbol)
     else:
@@ -745,6 +774,8 @@ def p_goto_stmt(p):
     '''goto_stmt :  GOTO  INTEGER'''
     p[0] = Node("goto_stmt", [p[2]])
 
+    emit('JMP', str(p[2]))
+
 
 def p_expression_list(p):
     '''expression_list :  expression_list  COMMA  expression
@@ -811,11 +842,11 @@ def p_expr(p):
         else:
             print(type_of_node(p[1]))
             print(type_of_node(p[3]))
-            
-            if type_of_node(p[1]) != type_of_node(p[3]):
-                # raise ValueError('Type mismatch. ')
-                pass
-            symbol = table.get_temp(type_of_node(p[1]))
+
+            if type_of_node(p[1]) == 'real' or type_of_node(p[3]) == 'real':
+                symbol = table.get_temp('real')
+            else:
+                symbol = table.get_temp('integer')
 
         emit(p[2], symbol, p[1], p[3])
         p[0].symbol = symbol
@@ -839,12 +870,27 @@ def p_term(p):
     else:
         p[0] = Node("term-term", [p[1], p[3]])
 
-        if p[2] == 'and':
+        if p[2] == '*':
+            if type_of_node(p[1]) == 'real' or type_of_node(p[3]) == 'real':
+                symbol = table.get_temp('real')
+            else:
+                symbol = table.get_temp('integer')
+
+        elif p[2] == '/':
+            symbol = table.get_temp('real')
+
+        elif p[2].lower() in ['div', 'mod']:
+            # pascal 语言里 div 和 / 是不同的
+            # div 表示整除，总得到一个整数
+            # / 表示浮点数除，总得到一个浮点数
+            if type_of_node(p[1]) != 'integer':
+                raise ValueError('Type mismatch: %s' % type_of_node(p[1]))
+            if type_of_node(p[3]) != 'integer':
+                raise ValueError('Type mismatch: %s' % type_of_node(p[3]))
+            symbol = table.get_temp('integer')
+
+        elif p[2].lower() == 'and':
             symbol = table.get_temp('boolean')
-        else:
-            if type_of_node(p[1]) != type_of_node(p[3]):
-                raise ValueError('Type mismatch. ')
-            symbol = table.get_temp(type_of_node(p[1]))
 
         emit(p[2], symbol, p[1], p[3])
         p[0].symbol = symbol
@@ -892,7 +938,7 @@ def p_factor_function(p):
 
     for item in p[3].list:
         emit("PARAM", None, item)
-    
+
     symbol = table.get_temp(p[0].type)
     emit("CALL", symbol, p[1])
     p[0].symbol = symbol
@@ -980,7 +1026,7 @@ def p_args_list(p):
         p[0].list = p[1].list + [p[3]]
     elif len(p) == 2:
         p[0] = Node("expression", [p[1]])
-        p[0].list = [p[1]] 
+        p[0].list = [p[1]]
 
 
 # 空产生式
