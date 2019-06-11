@@ -334,12 +334,13 @@ def p_function_name(p):
     table.define(p[1], 'integer', 'function')
     table.add_scope(p[1], 'function', 'integer')
     p[0].name = p[1]
-    
 
 
 def p_procedure_decl(p):
     '''procedure_decl :  procedure_head  SEMI  sub_routine  SEMI'''
     p[0] = Node("procedure_decl", [p[1], p[3]])
+
+    emit("RETURN", None)
 
     scope = table.del_scope()
     scopes.append(scope)
@@ -349,17 +350,20 @@ def p_procedure_head(p):
     '''procedure_head :  PROCEDURE procedure_name parameters '''
     p[0] = Node("procedure_head", [p[3]])
 
-    table.define(p[2], 'integer', 'procedure', p[3].list)
+    table.define(p[2].name, 'integer', 'procedure', p[3].list)
 
     for name, type in p[3].list:
         table.define(name, type)
+    
+    emit("LABEL", p[2].name)
 
 
 def p_procedure_name(p):
     '''procedure_name :  NAME'''
-    p[0] = p[1]
+    p[0] = Node("procedure_name", p[1])
 
     table.add_scope(p[1], 'function', 'integer')
+    p[0].name = p[1]
 
 
 def p_parameters(p):
