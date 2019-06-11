@@ -18,6 +18,7 @@ var
 	end; 
 
 begin 
+	read(A);
 	A := 20; 
 	writeln(A + 1 * 2); 
 	ScopeInner;

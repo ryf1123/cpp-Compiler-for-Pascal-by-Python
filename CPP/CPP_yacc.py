@@ -532,12 +532,16 @@ def p_proc_stmt_sysproc(p):
         
         if p[1].lower() == 'writeln':
             emit("PRINTLN", None)
-
             
 
 def p_proc_stmt_read(p):
     '''proc_stmt : READ  LP  factor  RP'''
     p[0] = Node("proc_stmt", [p[3]])
+    
+    if hasattr(p[3], 'symbol'):
+        emit("INPUT", p[3].symbol)
+    else:
+        raise ValueError("destination is not variable")
 
 
 def p_if_stmt_with_else(p):

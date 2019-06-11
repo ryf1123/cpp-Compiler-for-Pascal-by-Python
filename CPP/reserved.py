@@ -56,5 +56,7 @@ reserved = {
     # "with":""
 
     "true": "true",
-    "false": "false"
+    "false": "false",
+
+    "read": "READ"
 }
