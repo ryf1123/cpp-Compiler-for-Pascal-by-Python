@@ -135,11 +135,17 @@ class CodeGen():
     def handle_label(self, codeline):
         self.asmcode.append('\n# handle_label')
         print("[*** This line]: ", codeline)
+        # TODO: 保存ra，保存所有寄存器（临时寄存器和s寄存器）
+
+        bassAddr = str(self.symtable[codeline[3]].width)
+
+        for index in range(8):
+            # SW R1, 0(R2)
+            self.asmcode.append('SW'+ ' t' + str(index) + ' (' + bassAddr + ')$sp')
+
+
         if codeline[3] != None:
             # TODO: 分配内存
-            # print(self.symtable[codeline[3]])
-            # print(self.symtable[codeline[3]].width)
-
             self.asmcode.append(codeline[2]+':')
             self.asmcode.append('addi' + ' ' + '$sp $sp' +
                                 ' -' + str(self.symtable[codeline[3]].width))
@@ -153,8 +159,39 @@ class CodeGen():
             pass
         pass
 
-    def handle_funccall(self, codeline):
+    def handle_call(self, codeline):
         print("[This line]: ", codeline)
+        # TODO: 访问链：判断两个scope之间的关系
+        parent
+        if parent:
+            # 等于
+
+            
+            pass
+        else:
+            # 它parent的
+            pass 
+
+
+        # TODO: 控制链
+         = $fp
+
+        # TODO: ra
+        sw  $ra -8($sp)
+
+        # TODO: reg
+        for index in range(8,24):
+            # SW R1, 0(R2)
+            self.asmcode.append("SW $%s, %d($sp)"%(index, -12 - (index-8)*4)
+
+        # TODO: param
+
+
+        # TODO
+        self.asmcode.append('addi $sp $sp %d'%( - self.symtable[codeline[4]].width) - 76)
+
+        # jal
+        self.asmcode.append("jal %s"%(self.symtable[codeline[3]])
 
         pass
 
@@ -164,7 +201,20 @@ class CodeGen():
     def handle_return(self, codeline):
         self.asmcode.append('\n# handle_return')
         print("[This line]: ", codeline)
-        # FIXME: 需要填好返回值
+        # FIXME: 需要填好返回值，然后放回ra，最后返还stack上分配的内存，返回
+
+        # TODO: 指针
+
+        # TODO 恢复参数 （引用传递
+        
+        # TODO 恢复寄存器
+
+        # TODO 恢复返回地址 ra
+
+        # TODO ra'
+
+
+
 
         self.asmcode.append('addi' + ' ' + '$sp $sp' +
                             ' +' + str(self.symtable[codeline[3]].width))
@@ -190,7 +240,7 @@ class CodeGen():
             elif operation == 'LABEL':
                 self.handle_label(codeline)
             elif operation == 'CALL':
-                self.handle_funccall(codeline)
+                self.handle_call(codeline)
             elif operation == 'PARAM':
                 self.handle_params(codeline)
             elif operation == 'RETURN':

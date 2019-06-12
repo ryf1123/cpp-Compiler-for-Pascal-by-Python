@@ -5,8 +5,18 @@
 ## To Do
 
 - [ ] 目标代码生成
+
 - [ ] Debug
+
 - [ ] 准备展示
+
+- [ ] float point
+
+- [ ] 函数引用传递
+
+- [ ] 
+
+  
 
 
 
@@ -132,3 +142,28 @@ https://blog.csdn.net/wu_cai_/article/details/45034163
 | read_string                 | 8    | 返回值：将读取的字符串地址赋值给 \$a0，将读取的字符串长度赋值给 \$a1 |
 | sbrk应该同C中的sbrk()函数动态分配内存 | 9    | 参数：\$a0 需要分配的空间大小（单位目测是字节 bytes）；返回值：将分配好的空间首地址给 \$v0 |
 | exit                              | 10   |  |
+
+| Operation 操作符 | lhs结果 | op1       | Op2     |
+| ---------------- | ------- | --------- | ------- |
+| +\-\*\/          | 结果    | 操作数1   | 操作数2 |
+| PRINT            |         | 参数      |         |
+| PRINTLN          |         |           |         |
+| PARAM            |         | 参数      |         |
+| CALL(返回赋值)   | 结果    | 调用label |         |
+| CALL(返回不赋值) |         | 调用label |         |
+| LOADREF          | 结果    | 符号      | index   |
+| STOREREF         | 值      | 符号      | index   |
+| SLT              | 结果    | 操作数1   | 操作数2 |
+| BNE              | Label   | 操作数1   | 操作数2 |
+| BEQ              | Label   | 操作数1   | 操作数2 |
+| JMP              | Label   |           |         |
+| LABEL            | Label   | scope 名  |         |
+| INPUT            | 保存值  |           |         |
+| RETURN           | jieguo  | scope 名  |         |
+| NOT              | 结果    | 操作数    |         |
+| MOD              |         |           |         |
+
+
+
+
+
