@@ -33,7 +33,7 @@ class CodeGen():
         elif isinstance(op, int):
             out = op
         elif isinstance(op, str):
-            out = i
+            out = ord(op)
         elif isinstance(op, bool):
             out = [False, True].index(op)
         return out
@@ -51,12 +51,15 @@ class CodeGen():
         else:
             inst = op32_dict_i[operation]
 
-        if type(op1) == int and type(op2) == int:
-            const = eval(str(op1)+operation+str(op2))
+        const_type = [int, str, bool]
+
+        if type(op1) in const_type and type(op2) in const_type:
+
+            const = eval(str(op1)+' '+operation.lower()+' '+str(op2))
             self.asmcode.append(inst+' '+reg_lhs+', '+'$zero, '+str(const))
 
-        elif type(op1) == Symbol and type(op2) == int:
-            const = op2
+        elif type(op1) == Symbol and type(op2) in const_type:
+            const = reg_op2
             self.asmcode.append(inst+' '+reg_lhs+', '+reg_op1+', '+str(const))
 
         elif type(op1) == Symbol and type(op2) == Symbol:

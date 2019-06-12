@@ -34,6 +34,7 @@ class ThreeAC(object):
 
     def addLinenum(self):
         for i, code in enumerate(self.code):
+            code[0] = code[0].upper()
             self.code[i] = [i] + code
 
     def display(self):

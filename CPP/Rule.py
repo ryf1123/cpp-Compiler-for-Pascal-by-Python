@@ -57,38 +57,38 @@ unused_register_list = [
 ]
 
 op32_dict = {
-    '+':'addl',
-    '-':'subl',
-    '*':'imull',
-    '/':'idivl',
-    'DIV':'idivl',
-    'and':'and',
-    'OR':'or',
-    'NOT':'not',
-    'MOD':'mod',
-    'BEQ':'beq',
-    'BNE':'bne',
-    'SHL':'shll',
-    'SHR':'shrl',
+    '+': 'add',
+    '-': 'sub',
+    '*': 'imul',
+    '/': 'idiv',
+    'DIV': 'idiv',
+    'AND': 'and',
+    'OR': 'or',
+    'NOT': 'not',
+    'MOD': 'mod',
+    'BEQ': 'beq',
+    'BNE': 'bne',
+    'SHL': 'shl',
+    'SHR': 'shr',
 }
 
 op32_dict_i = {
-    '+':'addi',
-    '-':'subi',
-    '*':'imuli',
-    '/':'idivi',
-    'DIV':'idivi',
-    'AND':'andi',
-    'OR':'ori',
-    'MOD':'modi',
-    'mod':'modi',
-    'BEQ':'beq',
-    'BNE':'bne',
-    'SHL':'shli',
-    'SHR':'shri',
+    '+': 'addi',
+    '-': 'subi',
+    '*': 'imuli',
+    '/': 'idivi',
+    'DIV': 'idivi',
+    'AND': 'andi',
+    'OR': 'ori',
+    'MOD': 'modi',
+    'MOD': 'modi',
+    'BEQ': 'beq',
+    'BNE': 'bne',
+    'SHL': 'shli',
+    'SHR': 'shri',
 }
 
 jump_list = ['JMP', 'JL', 'JLE', 'JG', 'JGE', 'JNE', 'JE', 'JZ']
 binary_list = ['+', '-', '*', '/', 'AND', 'OR', 'MOD', 'CMP', 'SHL', 'SHR']
-operatore_list = ['UNARY', '=', 'LOADREF', 'STOREREF', 'CALL', 'LABEL', 'PARAM', 'RETURN', 'RETURNVAL', 'PRINT', 'SCAN']
-
+operatore_list = ['UNARY', '=', 'LOADREF', 'STOREREF', 'CALL',
+                  'LABEL', 'PARAM', 'RETURN', 'RETURNVAL', 'PRINT', 'SCAN']
