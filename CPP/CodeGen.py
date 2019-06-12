@@ -121,6 +121,7 @@ class CodeGen():
             # SW R1, 0(R2)
             self.asmcode.append('SW'+ ' t' + str(index) + ' (' + bassAddr + ')$sp')
 
+
         if codeline[3] != None:
             # TODO: 分配内存
             self.asmcode.append(codeline[2]+':')
