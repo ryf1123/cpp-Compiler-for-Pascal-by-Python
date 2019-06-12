@@ -1,4 +1,4 @@
-from Rule import op32_dict, op32_dict_i, register_list, binary_list
+from Rule import op32_dict, op32_dict_i, register_list, binary_list, unused_register_list
 from symbol_table import Symbol
 
 
@@ -229,6 +229,7 @@ class CodeGen():
                 op, reg, self.scopeStack[-1].lower()))
 
         self.symbol_register = {}
+        self.allocReg.unused_register = unused_register_list.copy()
 
         self.paraCounter = 0
 
@@ -346,6 +347,7 @@ class CodeGen():
         self.asmcode.append('jr $t8')  # 这个地方不是跳转到ra，因为ra已经恢复成跳转之后的返回地址了
 
         self.symbol_register = {}
+        self.allocReg.unused_register = unused_register_list.copy()
 
     def handle_loadref(self, codeline):
         print("[This line]: ", codeline)
