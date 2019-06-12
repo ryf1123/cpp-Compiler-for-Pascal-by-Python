@@ -278,6 +278,13 @@ class CodeGen():
         # self.asmcode.append("jal %s"%self.symtable[codeline[3]])
         self.asmcode.append("jal %s" % codeline[3])
 
+        # 将返回值从 $v0 中取出
+        if codeline[2]:
+            block_index = self.allocReg.line_block(line_num)
+            reg_lhs = self.handle_term(codeline[2], block_index, line_num)
+
+            self.asmcode.append("move, {}, $v0".format(reg_lhs))
+
     def handle_params(self, codeline):
         print("[This line]: ", codeline)
         self.asmcode.append('\n# handle_params')
@@ -334,15 +341,6 @@ class CodeGen():
 
         # FIXME: 需要填好返回值，然后放回ra，最后返还stack上分配的内存，返回
 
-        if lhs == None:
-            pass
-        else:
-            block_index = self.allocReg.line_block(line_num)
-            reg_op1 = self.handle_term(lhs, block_index, line_num)
-
-            self.asmcode.append('move %s, $v0' % (reg_op1))
-        # self.asmcode.append('addi' + ' ' + '$sp $sp' +
-        #                     ' +' + str(self.symtable[codeline[3]].width))
         self.asmcode.append('jr $t8')  # 这个地方不是跳转到ra，因为ra已经恢复成跳转之后的返回地址了
 
         self.symbol_register = {}
