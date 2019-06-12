@@ -20,7 +20,7 @@ var
 
 begin 
 	read(A);
-	A := 20; 
+	A := 20000; 
 	writeln(A + 1 * 2); 
 	ScopeInner;
 	A := A + Summation(10);
