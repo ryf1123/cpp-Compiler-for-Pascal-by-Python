@@ -3,6 +3,7 @@ from symbol_table import Symbol
 
 
 class CodeGen():
+
     def __init__(self, symtable, threeAC, allocReg):
         self.symtable = symtable
         self.threeAC = threeAC
@@ -16,6 +17,8 @@ class CodeGen():
         self.allocReg.get_basic_block()
         self.allocReg.iterate_block()
 
+        self.scopeStack = ['main']
+
         # self.allocReg.block2label()
 
         # self.handle_binary(self.code[23])
@@ -23,7 +26,7 @@ class CodeGen():
         # for i in range(11):
         #     self.handle_binary(self.code[i])
         self.tacToasm()
-
+        self.paraCounter = 0
         self.display_asm()
 
     def handle_term(self, op, block_index, line_num):
@@ -136,22 +139,13 @@ class CodeGen():
         self.asmcode.append('\n# handle_label')
         print("[*** This line]: ", codeline)
         # TODO: 保存ra，保存所有寄存器（临时寄存器和s寄存器）
-
-        bassAddr = str(self.symtable[codeline[3]].width)
-
-        for index in range(8):
-            # SW R1, 0(R2)
-            self.asmcode.append('SW'+ ' t' + str(index) + ' (' + bassAddr + ')$sp')
-
+        
 
         if codeline[3] != None:
-            # TODO: 分配内存
-            self.asmcode.append(codeline[2]+':')
-            self.asmcode.append('addi' + ' ' + '$sp $sp' +
-                                ' -' + str(self.symtable[codeline[3]].width))
 
-            pass
-            # codeline[]
+            # bassAddr = str(self.symtable[codeline[3]].width)
+            self.scopeStack.append(self.scopeStack[-1]+'.'+codeline[2])
+            self.asmcode.append(codeline[2]+':')
         else:
             # 真的是一个label
             self.asmcode.append(codeline[2]+':')
@@ -160,46 +154,68 @@ class CodeGen():
         pass
 
     def handle_call(self, codeline):
+        
         print("[This line]: ", codeline)
+
+        self.paraCounter = 0
+
+        self.asmcode.append('\n# handle_call')
         # TODO: 访问链：判断两个scope之间的关系
-        parent
-        if parent:
-            # 等于
+        self.scopeStack[-1]
+        print("****")
+        print(codeline[4])
+        print(self.scopeStack[-1])
+        print('.'.join(self.scopeStack[-1].split('.')[:-1]))
+        # if codeline[4] == self.scopeStack[-1]:
+        #     # 访问控制 = fp 
+        #     pass
 
-            
-            pass
+        if codeline[4] == '.'.join(self.scopeStack[-1].split('.')[:-1]):
+            # 访问控制 = 当前活动访问控制
+            # sp - 4 = 
+            self.asmcode.append("# = parent's")
+            self.asmcode.append('lw $at 76($fp)')
+            self.asmcode.append('sw $at 0($sp)')
         else:
-            # 它parent的
-            pass 
+            self.asmcode.append('# = fp')
+            self.asmcode.append('sw $fp 0($sp)')
+            # 访问控制 = fp 
+            
 
+        # 控制链
+        self.asmcode.append('sw $fp -4($sp)')
+        
 
-        # TODO: 控制链
-         = $fp
+        # ra
+        self.asmcode.append('sw $ra -8($sp)')
+        # sw  $ra -8($sp)
 
-        # TODO: ra
-        sw  $ra -8($sp)
-
-        # TODO: reg
+        # reg
         for index in range(8,24):
             # SW R1, 0(R2)
-            self.asmcode.append("SW $%s, %d($sp)"%(index, -12 - (index-8)*4)
+            # FIXME: 
+            self.asmcode.append("sw $%s, %d($sp)"%(index, -12 - (index-8)*4))
 
-        # TODO: param
+        # param 参数中处理
 
-
-        # TODO
-        self.asmcode.append('addi $sp $sp %d'%( - self.symtable[codeline[4]].width) - 76)
+        # 
+        self.asmcode.append('addi $fp $sp -76')
+        self.asmcode.append('addi $sp $sp %d'%( - self.symtable[codeline[4]].width - 76))
 
         # jal
-        self.asmcode.append("jal %s"%(self.symtable[codeline[3]])
+        # self.asmcode.append("jal %s"%self.symtable[codeline[3]])
+        self.asmcode.append("jal %s"%codeline[3])
 
-        pass
 
     def handle_params(self, codeline):
         print("[This line]: ", codeline)
 
+
     def handle_return(self, codeline):
         self.asmcode.append('\n# handle_return')
+        
+        self.scopeStack.pop()
+
         print("[This line]: ", codeline)
         # FIXME: 需要填好返回值，然后放回ra，最后返还stack上分配的内存，返回
 

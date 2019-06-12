@@ -1046,7 +1046,7 @@ if __name__ == '__main__':
         f = open(sys.argv[1], "r")
         data = f.read()
         f.close()
-        result = parser.parse(data, debug=1)
+        result = parser.parse(data, debug=0)
         # print(result)
 
         # print(drawTree(result))
@@ -1073,5 +1073,5 @@ if __name__ == '__main__':
             if not data:
                 continue
 
-            result = parser.parse(data, debug=1)
+            result = parser.parse(data, debug=0)
             print(result)

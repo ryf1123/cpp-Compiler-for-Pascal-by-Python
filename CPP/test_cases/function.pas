@@ -15,6 +15,7 @@ var
 			Summation := 1 
 		else 
 			Summation := 2;
+			ScopeInner;
 	end; 
 
 begin 
