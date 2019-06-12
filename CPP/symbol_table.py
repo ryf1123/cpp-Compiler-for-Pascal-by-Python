@@ -38,9 +38,9 @@ class Symbol:
 
         simple = {
             'integer': 4,
-            'real': 8,
-            'char': 1,  # TODO
-            'boolean': 1,
+            'real': 4,
+            'char': 4,  # TODO
+            'boolean': 4
         }
 
         if self.var_function == 'function':
