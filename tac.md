@@ -4,8 +4,8 @@
 | PRINT            |         | 参数      |         |
 | PRINTLN          |         |          |         |
 | PARAM            |         | 参数      |         |
-| CALL(返回赋值)   | 结果    | 调用label |         |
-| CALL(返回不赋值) |         | 调用label |         |
+| CALL(返回赋值)   | 结果    | 调用label | scope |
+| CALL(返回不赋值) |         | 调用label | scope |
 | LOADREF          | 结果    | 符号      | index   |
 | STOREREF         | 值      | 符号      | index   |
 | SLT              | 结果     | 操作数1   | 操作数2 |
@@ -14,7 +14,7 @@
 | JMP              | Label |      |         |
 | LABEL            | Label | scope 名 |         |
 | INPUT            | 保存值 |       |         |
-| RETURN           | jieguo | scope 名 |         |
+| RETURN           | 结果 | scope 名 |         |
 | NOT              | 结果    | 操作数    |         |
 | MOD              |         |           |         |
 

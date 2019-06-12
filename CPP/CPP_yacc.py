@@ -318,9 +318,9 @@ def p_function_head(p):
     '''function_head :  FUNCTION  function_name  parameters  COLON  simple_type_decl '''
     p[0] = Node("function_head", [p[3], p[5]])
 
-    table.define('_return', p[5].type, 'var', p[3].list)
     for name, type in p[3].list:
         table.define(name, type)
+    table.define('_return', p[5].type, 'var', p[3].list)
 
     table.scope().return_type = p[5].type
     table.get_identifier(p[2].name).type = p[5].type
@@ -1052,11 +1052,13 @@ if __name__ == '__main__':
         # print(drawTree(result))
         # print(table.scope())
         scopes['main'] = table.scope()
-        # for scope in scopes:
-        #     print(scope)
 
-        print(scopes)
+        print("##")
 
+        for scope in scopes:
+            print(scopes[scope])
+
+        exit()
         tac.addLinenum()
         tac.display()
         allocReg = AllocateRegister.AllocteRegister(scopes, tac)
