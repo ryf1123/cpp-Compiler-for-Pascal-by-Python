@@ -39,6 +39,8 @@ class CodeGen():
         return out
 
     def handle_binary(self, codeline):
+        self.asmcode.append('\n# handle_binary')
+
         line_num, operation, lhs, op1, op2 = codeline
         block_index = self.allocReg.line_block(line_num)
 
@@ -69,10 +71,34 @@ class CodeGen():
         pass
 
     def handle_input(self, codeline):
-        pass
+        line_num, operation, lhs, op1, op2 = codeline
+        block_index = self.allocReg.line_block(line_num)
+        reg_lhs = self.handle_term(lhs, block_index, line_num)
+
+        # TODO 只考虑输入整数
+        self.asmcode.append('li $v0, 5')  # read int
+        self.asmcode.append('syscall')
+        self.asmcode.append('addi ${}, $v0, 0'.format(reg_lhs))
 
     def handle_print(self, codeline):
-        pass
+        self.asmcode.append('\n# handle_print')
+
+        line_num, operation, lhs, op1, op2 = codeline
+        block_index = self.allocReg.line_block(line_num)
+
+        if type(op1) == Symbol:
+            reg_op1 = self.handle_term(op1, block_index, line_num)
+            print(op1, reg_op1)
+            # TODO 只考虑输出整数
+            self.asmcode.append('li $v0, 1')
+            self.asmcode.append('addi $a0, {}, 0'.format(reg_op1))
+            self.asmcode.append('syscall')
+
+        else:
+            # TODO 只考虑输出整数
+            self.asmcode.append('li $v0, 1')
+            self.asmcode.append('addi $a0, $0, {}'.format(op1))
+            self.asmcode.append('syscall')
 
     def handle_cmp(self, codeline):
         pass
@@ -116,7 +142,7 @@ class CodeGen():
             elif operation == 'INPUT':
                 self.handle_input(codeline)
             elif operation in ['PRINT', 'PRINTLN']:
-                self.handle_binary(codeline)
+                self.handle_print(codeline)
             elif operation == 'LOADREF':
                 self.handle_loadref(codeline)
             elif operation == 'STOREREF':
