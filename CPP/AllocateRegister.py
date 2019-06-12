@@ -166,12 +166,12 @@ class AllocteRegister():
         return max_sym
 
     def load_mem(self, op, reg, scope):
-        return "lw {}, {}($fp)".format(reg, -self.symtable[scope].get(op).offset)
+        return "lw {}, {}($fp)".format(reg, -self.symtable[scope].get(op.name).offset)
 
     def store_mem(self, op, reg, scope):
-        return "sw {}, {}($fp)".format(reg, -self.symtable[scope].get(op).offset)
+        return "sw {}, {}($fp)".format(reg, -self.symtable[scope].get(op.name).offset)
 
-    def getReg(self, op, block_index, line_num, scope_stack):
+    def getReg(self, op, block_index, line_num, scope):
         '''
             分配寄存器
         '''
@@ -202,15 +202,15 @@ class AllocteRegister():
             self.unused_register.remove(reg)
             self.symbol_register[op] = reg
 
-            asmcode.append(self.load_mem(op, reg, scope_stack[-1]))
+            asmcode.append(self.load_mem(op, reg, scope))
 
         else:
             var = self.get_block_maxuse(block_index, line_num)
             reg = self.symbol_register[var]
-            asmcode.append(self.store_mem(var, reg, scope_stack[-1]))
+            asmcode.append(self.store_mem(var, reg, scope))
             del self.symbol_register[var]
 
             self.symbol_register[op] = reg
-            asmcode.append(self.load_mem(op, reg, scope_stack[-1]))
+            asmcode.append(self.load_mem(op, reg, scope))
 
-        return reg
+        return reg, asmcode

@@ -65,10 +65,14 @@ def p_program_head(p):
 
 
 def p_routine(p):
-    '''routine :  routine_head   routine_body'''
+    '''routine :  routine_head  main_label  routine_body'''
     p[0] = Node("routine", [p[1], p[2]])
 
 
+def p_main_label(p):
+    '''main_label :  '''
+    p[0] = Node("main_label", [])
+    emit("LABEL", "main")
 
 
 def p_sub_routine(p):
@@ -79,7 +83,7 @@ def p_sub_routine(p):
 def p_routine_head(p):
     '''routine_head :  label_part  const_part  type_part  var_part  routine_part'''
     p[0] = Node("routine_head", [p[1], p[2], p[3], p[4], p[5]])
-    emit("LABEL", "main")
+
 
 def p_label_part(p):
     '''label_part :  empty'''

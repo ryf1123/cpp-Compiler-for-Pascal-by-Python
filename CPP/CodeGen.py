@@ -22,7 +22,7 @@ class CodeGen():
         # self.allocReg.block2label()
 
         self.tacToasm()
-        
+
         self.asmcode.append('li $v0, 10')
         self.asmcode.append('syscall')
         self.display_asm()
@@ -32,7 +32,7 @@ class CodeGen():
         out = None
         if type(op) == Symbol:
             out, code = self.allocReg.getReg(
-                op, block_index, line_num, self.scopeStack)
+                op, block_index, line_num, self.scopeStack[-1].lower())
             self.asmcode += code
 
         elif type(op) == int:
@@ -214,18 +214,19 @@ class CodeGen():
         pass
 
     def load_mem(self, op, reg, scope):
-        return "lw {}, {}($fp)".format(reg, -self.symtable[scope].get(op).offset)
+        return "lw {}, {}($fp)".format(reg, -self.symtable[scope].get(op.name).offset)
 
     def store_mem(self, op, reg, scope):
-        return "sw {}, {}($fp)".format(reg, -self.symtable[scope].get(op).offset)
+        return "sw {}, {}($fp)".format(reg, -self.symtable[scope].get(op.name).offset)
 
     def handle_call(self, codeline):
 
         print("[This line]: ", codeline)
 
         for op in self.symbol_register.keys():
-            reg = symbol_register[op]
-            self.asmcode.append(self.store_mem(op, reg, self.scopeStack[-1]))
+            reg = self.symbol_register[op]
+            self.asmcode.append(self.store_mem(
+                op, reg, self.scopeStack[-1].lower()))
 
         self.symbol_register = {}
 
@@ -251,12 +252,10 @@ class CodeGen():
         else:
             self.asmcode.append('# = fp')
             self.asmcode.append('sw $fp, 0($sp)')
-            # 访问控制 = fp 
-            
+            # 访问控制 = fp
 
         # 控制链
         self.asmcode.append('sw $fp, -4($sp)')
-        
 
         # ra
         self.asmcode.append('sw $ra, -8($sp)')
@@ -290,10 +289,11 @@ class CodeGen():
 
         const_type = [int, str, bool]
         if type(op1) in const_type:
-            self.asmcode.append('li $t8, %d'%reg_op1)
-            self.asmcode.append('sw $t8, -%d($sp)'%(76 + self.paraCounter*4))
+            self.asmcode.append('li $t8, %d' % reg_op1)
+            self.asmcode.append('sw $t8, -%d($sp)' % (76 + self.paraCounter*4))
         else:
-            self.asmcode.append('sw %s, -%d($sp)'%(reg_op1, 76 + self.paraCounter*4))
+            self.asmcode.append('sw %s, -%d($sp)' %
+                                (reg_op1, 76 + self.paraCounter*4))
         # sw  -76($sp)
 
         self.paraCounter += 1
@@ -307,7 +307,8 @@ class CodeGen():
         print("[This line]: ", codeline)
 
         # 指针
-        self.asmcode.append('addi $sp, $sp, %d'%(self.symtable[topDeleted].width + 76))
+        self.asmcode.append('addi $sp, $sp, %d' %
+                            (self.symtable[topDeleted].width + 76))
         self.asmcode.append('addi $fp, $sp, 76')
 
         # TODO 恢复参数 （引用传递
@@ -316,13 +317,14 @@ class CodeGen():
         if lhs == None:
             pass
         else:
-            self.asmcode.append('lw $v0, -%d($fp)'%self.symtable[topDeleted].get("_return").offset)
+            self.asmcode.append('lw $v0, -%d($fp)' %
+                                self.symtable[topDeleted].get("_return").offset)
 
         #  恢复寄存器
-        for index in range(8,24):
+        for index in range(8, 24):
             # SW R1, 0(R2)
-            # FIXME: 
-            self.asmcode.append("lw $%s, %d($sp)"%(index, -12 - (index-8)*4))
+            # FIXME:
+            self.asmcode.append("lw $%s, %d($sp)" % (index, -12 - (index-8)*4))
 
         # 恢复返回地址 ra
         self.asmcode.append('move $t8, $ra')
@@ -331,7 +333,6 @@ class CodeGen():
         self.asmcode.append('lw $ra, -8($sp)')
 
         # FIXME: 需要填好返回值，然后放回ra，最后返还stack上分配的内存，返回
-        
 
         if lhs == None:
             pass
@@ -339,12 +340,12 @@ class CodeGen():
             block_index = self.allocReg.line_block(line_num)
             reg_op1 = self.handle_term(lhs, block_index, line_num)
 
-            
-            self.asmcode.append('move %s, $v0'%(reg_op1))
+            self.asmcode.append('move %s, $v0' % (reg_op1))
         # self.asmcode.append('addi' + ' ' + '$sp $sp' +
         #                     ' +' + str(self.symtable[codeline[3]].width))
-        self.asmcode.append('jr $t8') # 这个地方不是跳转到ra，因为ra已经恢复成跳转之后的返回地址了
-        pass
+        self.asmcode.append('jr $t8')  # 这个地方不是跳转到ra，因为ra已经恢复成跳转之后的返回地址了
+
+        self.symbol_register = {}
 
     def handle_loadref(self, codeline):
         print("[This line]: ", codeline)
