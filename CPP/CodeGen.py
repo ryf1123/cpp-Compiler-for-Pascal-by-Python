@@ -19,8 +19,9 @@ class CodeGen():
 
         # self.handle_binary(self.code[23])
         # self.handle_binary(self.code[24])
-        for i in range(11):
-            self.handle_binary(self.code[i])
+        # for i in range(11):
+        #     self.handle_binary(self.code[i])
+        self.tacToasm()
         
         self.display_asm()
     
@@ -50,8 +51,7 @@ class CodeGen():
             inst = op32_dict_i[operation]
     
         if type(op1) == int and type(op2) == int:
-            const = op1 + op2
-            print(reg_lhs, reg_op1, reg_op2)
+            const = eval(str(op1)+operation+str(op2))
             self.asmcode.append(inst+' '+reg_lhs+', '+'$zero, '+str(const))
         
         elif type(op1) == Symbol and type(op2) == int:
@@ -59,53 +59,50 @@ class CodeGen():
             self.asmcode.append(inst+' '+reg_lhs+', '+reg_op1+', '+str(const))
 
         elif type(op1) == Symbol and type(op2) == Symbol:
-            self.asmcode.append(inst+' '+reg_lhs+', '+reg_op1+', '+reg_op2)
-
-        
-        
+            self.asmcode.append(inst+' '+reg_lhs+', '+reg_op1+', '+reg_op2)        
 
     
-    def handle_division(self):
+    def handle_division(self, codeline):
         pass
 
     
-    def handle_input(self):
+    def handle_input(self, codeline):
         pass
     
 
-    def handle_print(self):
+    def handle_print(self, codeline):
         pass
     
 
-    def handle_cmp(self):
+    def handle_cmp(self, codeline):
         pass
 
 
-    def handle_jmp(self):
-        pass
-    
-
-    def handle_label(self):
+    def handle_jmp(self, codeline):
         pass
     
 
-    def handle_funccall(self):
-        pass
-
-    
-    def handle_params(self):
+    def handle_label(self, codeline):
         pass
     
 
-    def handle_return(self):
+    def handle_funccall(self, codeline):
+        pass
+
+    
+    def handle_params(self, codeline):
         pass
     
 
-    def handle_loadref(self):
+    def handle_return(self, codeline):
         pass
     
 
-    def handle_storeref(self):
+    def handle_loadref(self, codeline):
+        pass
+    
+
+    def handle_storeref(self, codeline):
         pass
 
 
@@ -113,9 +110,26 @@ class CodeGen():
         for codeline in self.code:
             operation = codeline[1]
             if operation in binary_list:
-                handle_binary(codeline)
+                self.handle_binary(codeline)
+            elif operation in ['BNE', 'BEQ', 'JMP']:
+                self.handle_cmp(codeline)
+            elif operation == 'LABEL':
+                self.handle_label(codeline)
             elif operation == 'CALL':
-                pass#handle_funccall
+                self.handle_funccall(codeline)
+            elif operation == 'PARAM':
+                self.handle_params(codeline)
+            elif operation == 'RETURN':
+                self.handle_return(codeline)
+            elif operation == 'INPUT':
+                self.handle_input(codeline)
+            elif operation in ['PRINT', 'PRINTLN']:
+                self.handle_binary(codeline)
+            elif operation == 'LOADREF':
+                self.handle_loadref(codeline)
+            elif operation == 'STOREREF':
+                self.handle_storeref(codeline)
+            
     
 
     def display_asm(self):
