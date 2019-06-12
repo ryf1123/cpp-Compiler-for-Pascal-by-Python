@@ -182,8 +182,10 @@ class Scope:
 
         symbol = Symbol(name, type, var_function,
                         offset=self.width, params=params)
-
         self.temps[name] = symbol
+
+        if var_function in ('var', 'const'):
+            self.width += symbol.size
 
         return symbol
 
