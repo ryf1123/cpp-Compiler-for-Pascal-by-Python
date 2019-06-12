@@ -8,7 +8,6 @@ class AllocteRegister():
         self.symbols = []
 
         self.unused_register = unused_register_list.copy()
-        self.used_register = []
 
         # 基本块
         self.basic_blocks = []
@@ -19,36 +18,14 @@ class AllocteRegister():
         # {[startline, endline]: label_name}
 
         # 寄存器 存了哪些symbol
-        self.register_symbol = {}
+        # self.register_symbol = {}
 
         # symbol 被存在哪些寄存器里
         self.symbol_register = {}
 
         # initialization
-        for reg in self.unused_register:
-            self.register_symbol[reg] = ''
-
-        # add symbol
-        # for scope in self.symtable.table:
-        #     scope_name = scope.name
-        #     for var in scope.symbols.keys():
-        #         var_entry = self.symtable.get_identifier(var)
-        #         if var_entry != None:
-        #             self.symbols.append(var)
-
-        #         if var_entry.var_function == 'record':
-        #             for param in var_entry.params:
-        #                 self.symbols.append(var+'_'+param[0])
-        #                 # self.symbols.append('self_'+param[0])
-
-        #     for temp in scope.temps.keys():
-        #         if self.symtable.get_identifier(temp) != None:
-        #             self.symbols.append(temp)
-
-        #     self.symbols = list(set(self.symbols))
-
-        # for sym in self.symbols:
-        #     self.symbol_register[sym] = ''
+        # for reg in self.unused_register:
+        #     self.register_symbol[reg] = ''
 
     def get_basic_block(self):
         '''
@@ -188,15 +165,20 @@ class AllocteRegister():
 
         return max_sym
 
-    def getReg(self, op, block_index, line_num, all_mem=False):
+    def load_mem(self, op, reg, scope):
+        return "lw {}, {}($fp)".format(reg, -self.symtable[scope].get(op).offset)
+
+    def store_mem(self, op, reg, scope):
+        return "sw {}, {}($fp)".format(reg, -self.symtable[scope].get(op).offset)
+
+    def getReg(self, op, block_index, line_num, scope_stack):
         '''
             分配寄存器
         '''
         code_line = self.code[line_num]
-
         start, end = self.basic_blocks[block_index]
         reg = ''
-        # msg = ''
+        asmcode = []
 
         line_num, operation, lhs, op1, op2 = code_line
 
@@ -214,24 +196,21 @@ class AllocteRegister():
 
         if op in self.symbol_register:
             reg = self.symbol_register[op]
-            msg = 'replace op'
-
-        # elif op2 in self.symbol_register:
-        #     reg = self.symbol_register[op2]
-        #     msg = 'replace op2'
 
         elif len(self.unused_register) > 0:
             reg = self.unused_register[0]
             self.unused_register.remove(reg)
-            self.used_register.append(reg)
             self.symbol_register[op] = reg
-            msg = 'did not replace'
+
+            asmcode.append(self.load_mem(op, reg, scope_stack[-1]))
 
         else:
             var = self.get_block_maxuse(block_index, line_num)
             reg = self.symbol_register[var]
-            msg = 'replace next use' + var
-        # else:
-        #     reg = lhs
-        #     msg = 'replace nothing'
+            asmcode.append(self.store_mem(var, reg, scope_stack[-1]))
+            del self.symbol_register[var]
+
+            self.symbol_register[op] = reg
+            asmcode.append(self.load_mem(op, reg, scope_stack[-1]))
+
         return reg
