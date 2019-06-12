@@ -5,7 +5,10 @@ msg1: .asciiz "hello world"
 .globl main
 main:
 
-addi $sp, $sp, -4
+addi $sp, $sp, -16
+addi $sp, $sp, -16
+addi $sp, $sp, -16
+addi $sp, $sp, -16
 
 li $v0, 6
 syscall

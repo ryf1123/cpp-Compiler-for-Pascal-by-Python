@@ -17,3 +17,8 @@
 | RETURN           | jieguo | scope 名 |         |
 | NOT              | 结果    | 操作数    |         |
 | MOD              |         |           |         |
+
+
+
+
+
