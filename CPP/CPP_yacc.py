@@ -308,7 +308,7 @@ def p_function_decl(p):
     '''function_decl : function_head  SEMI  sub_routine  SEMI'''
     p[0] = Node("function_decl", [p[1], p[3]])
 
-    emit("RETURN", None, p[1].symbol)
+    emit("RETURN", p[1].symbol, table.scope().name)
 
     scope = table.del_scope()
     scopes[scope.name] = scope
@@ -343,7 +343,7 @@ def p_procedure_decl(p):
     '''procedure_decl :  procedure_head  SEMI  sub_routine  SEMI'''
     p[0] = Node("procedure_decl", [p[1], p[3]])
 
-    emit("RETURN", None)
+    emit("RETURN", None, table.scope().name)
 
     scope = table.del_scope()
     scopes[scope.name] = scope
@@ -1055,6 +1055,8 @@ if __name__ == '__main__':
         scopes['main'] = table.scope()
         # for scope in scopes:
         #     print(scope)
+
+        print(scopes)
 
         tac.addLinenum()
         tac.display()

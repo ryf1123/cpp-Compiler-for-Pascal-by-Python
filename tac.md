@@ -12,8 +12,8 @@
 | BNE              | Label  | 操作数1 | 操作数2    |
 | BEQ              | Label    | 操作数1   | 操作数2    |
 | JMP              | Label |      |         |
-| LABEL            | Label |      |         |
+| LABEL            | Label | scope 名 |         |
 | INPUT            | 保存值 |       |         |
-| RETURN           |         | 参数      |         |
+| RETURN           | jieguo | scope 名 |         |
 | NOT              | 结果    | 操作数    |         |
 | MOD              |         |           |         |
