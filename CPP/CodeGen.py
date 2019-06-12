@@ -12,7 +12,7 @@ class CodeGen():
         self.code = threeAC.code
         self.asmcode = []
         self.symbol_register = self.allocReg.symbol_register
-        self.register_symbol = self.allocReg.register_symbol
+        # self.register_symbol = self.allocReg.register_symbol
 
         self.allocReg.get_basic_block()
         self.allocReg.iterate_block()
@@ -21,10 +21,6 @@ class CodeGen():
 
         # self.allocReg.block2label()
 
-        # self.handle_binary(self.code[23])
-        # self.handle_binary(self.code[24])
-        # for i in range(11):
-        #     self.handle_binary(self.code[i])
         self.tacToasm()
         self.paraCounter = 0
         self.display_asm()
@@ -33,7 +29,10 @@ class CodeGen():
 
         out = None
         if type(op) == Symbol:
-            out = self.allocReg.getReg(op, block_index, line_num)
+            out, code = self.allocReg.getReg(
+                op, block_index, line_num, self.scopeStack)
+            self.asmcode += code
+
         elif type(op) == int:
             out = op
         elif type(op) == str:
@@ -193,7 +192,6 @@ class CodeGen():
         self.asmcode.append('\n# handle_label')
         print("[*** This line]: ", codeline)
         # TODO: 保存ra，保存所有寄存器（临时寄存器和s寄存器）
-        
 
         if codeline[3] != None:
 
@@ -207,9 +205,21 @@ class CodeGen():
             pass
         pass
 
+    def load_mem(self, op, reg, scope):
+        return "lw {}, {}($fp)".format(reg, -self.symtable[scope].get(op).offset)
+
+    def store_mem(self, op, reg, scope):
+        return "sw {}, {}($fp)".format(reg, -self.symtable[scope].get(op).offset)
+
     def handle_call(self, codeline):
-        
+
         print("[This line]: ", codeline)
+
+        for op in self.symbol_register.keys():
+            reg = symbol_register[op]
+            self.asmcode.append(self.store_mem(op, reg, self.scopeStack[-1]))
+
+        self.symbol_register = {}
 
         self.paraCounter = 0
 
@@ -221,53 +231,50 @@ class CodeGen():
         print(self.scopeStack[-1])
         print('.'.join(self.scopeStack[-1].split('.')[:-1]))
         # if codeline[4] == self.scopeStack[-1]:
-        #     # 访问控制 = fp 
+        #     # 访问控制 = fp
         #     pass
 
         if codeline[4] == '.'.join(self.scopeStack[-1].split('.')[:-1]):
             # 访问控制 = 当前活动访问控制
-            # sp - 4 = 
+            # sp - 4 =
             self.asmcode.append("# = parent's")
             self.asmcode.append('lw $at 76($fp)')
             self.asmcode.append('sw $at 0($sp)')
         else:
             self.asmcode.append('# = fp')
             self.asmcode.append('sw $fp 0($sp)')
-            # 访问控制 = fp 
-            
+            # 访问控制 = fp
 
         # 控制链
         self.asmcode.append('sw $fp -4($sp)')
-        
 
         # ra
         self.asmcode.append('sw $ra -8($sp)')
         # sw  $ra -8($sp)
 
         # reg
-        for index in range(8,24):
+        for index in range(8, 24):
             # SW R1, 0(R2)
-            # FIXME: 
-            self.asmcode.append("sw $%s, %d($sp)"%(index, -12 - (index-8)*4))
+            # FIXME:
+            self.asmcode.append("sw $%s, %d($sp)" % (index, -12 - (index-8)*4))
 
         # param 参数中处理
 
-        # 
+        #
         self.asmcode.append('addi $fp $sp -76')
-        self.asmcode.append('addi $sp $sp %d'%( - self.symtable[codeline[4]].width - 76))
+        self.asmcode.append('addi $sp $sp %d' %
+                            (- self.symtable[codeline[4]].width - 76))
 
         # jal
         # self.asmcode.append("jal %s"%self.symtable[codeline[3]])
-        self.asmcode.append("jal %s"%codeline[3])
-
+        self.asmcode.append("jal %s" % codeline[3])
 
     def handle_params(self, codeline):
         print("[This line]: ", codeline)
 
-
     def handle_return(self, codeline):
         self.asmcode.append('\n# handle_return')
-        
+
         self.scopeStack.pop()
 
         print("[This line]: ", codeline)
@@ -276,15 +283,12 @@ class CodeGen():
         # TODO: 指针
 
         # TODO 恢复参数 （引用传递
-        
+
         # TODO 恢复寄存器
 
         # TODO 恢复返回地址 ra
 
         # TODO ra'
-
-
-
 
         self.asmcode.append('addi' + ' ' + '$sp $sp' +
                             ' +' + str(self.symtable[codeline[3]].width))
@@ -299,24 +303,6 @@ class CodeGen():
         print("[This line]: ", codeline)
         print(codeline)
         pass
-
-    def load_reg(self, reg):
-        kind = ['s', 't'].index(reg[1])  # s or t
-        num = reg[2]
-        self.asmcode.append("lw {}, {}($fp)".format(reg, (kind*8+(8-num))*4))
-
-    def store_reg(self, reg):
-        kind = ['s', 't'].index(reg[1])  # s or t
-        num = reg[2]
-        self.asmcode.append("sw {}, {}($fp)".format(reg, (kind*8+(8-num)*4)))
-
-    def load_mem(self, op, reg):
-        self.symtable.append("lw {}, {}($fp)".format(
-            reg, -self.symtable.get_identifier(op).offset))
-
-    def store_mem(self, op, reg):
-        self.asmcode.append("sw {}, {}($fp)".format(
-            reg, -self.symtable.get_identifier(op).offset))
 
     def tacToasm(self):
         for codeline in self.code:
