@@ -207,6 +207,16 @@ class Scope:
         raise ValueError('Name `%s` is not defined in scope `%s' %
                          (name, self.name))
 
+    def get_scope(self, name):
+        '''查找一个符号所属的 scope'''
+        if name in self.symbols:
+            return self.name
+        if name in self.temps:
+            return self.name
+
+        raise ValueError('Name `%s` is not defined in scope `%s' %
+                         (name, self.name))
+
 
 @singleton
 class Table:
@@ -245,6 +255,21 @@ class Table:
             return scope.get(name.lower())
         except:
             return self.get_identifier(name.lower(), index - 1)
+
+    def get_identifier_scope(self, name, index=None):
+        print(self)
+
+        if index is None:
+            index = len(self.table) - 1
+        if index == -1:
+            raise ValueError('Name `%s` is not defined. ' % name)
+
+        scope = self.table[index]
+
+        try:
+            return scope.get_scope(name.lower())
+        except:
+            return self.get_identifier_scope(name.lower(), index - 1)
 
     def set_identifier(self, name, type, var_function='var', params=None):
         '''定义一个新名字'''

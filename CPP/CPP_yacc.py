@@ -353,8 +353,6 @@ def p_procedure_head(p):
     '''procedure_head :  PROCEDURE procedure_name parameters '''
     p[0] = Node("procedure_head", [p[3]])
 
-    table.define(p[2].name, 'integer', 'procedure', p[3].list)
-
     for name, type in p[3].list:
         table.define(name, type)
 
@@ -365,6 +363,7 @@ def p_procedure_name(p):
     '''procedure_name :  NAME'''
     p[0] = Node("procedure_name", p[1])
 
+    table.define(p[1], 'integer', 'procedure')
     table.add_scope(p[1], 'function', 'integer')
     p[0].name = p[1]
 
@@ -541,7 +540,7 @@ def p_proc_stmt_proc(p):
         for name in p[3].list:
             emit("PARAM", None, name)
 
-    emit("CALL", None, p[1])
+    emit("CALL", None, p[1], table.get_identifier_scope(p[1]))
 
 
 def p_proc_stmt_sysproc(p):
@@ -942,7 +941,7 @@ def p_factor_function(p):
         emit("PARAM", None, item)
 
     symbol = table.get_temp(p[0].type)
-    emit("CALL", symbol, p[1])
+    emit("CALL", symbol, p[1], table.get_identifier_scope(p[1]))
     p[0].symbol = symbol
 
 
