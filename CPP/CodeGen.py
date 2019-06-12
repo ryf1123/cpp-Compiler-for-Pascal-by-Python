@@ -32,13 +32,16 @@ class CodeGen():
     def handle_term(self, op, block_index, line_num):
 
         out = None
-        if isinstance(op, Symbol):
+        if type(op) == Symbol:
             out = self.allocReg.getReg(op, block_index, line_num)
-        elif isinstance(op, int):
+        elif type(op) == int:
             out = op
-        elif isinstance(op, str):
-            out = ord(op)
-        elif isinstance(op, bool):
+        elif type(op) == str:
+            if len(op) == 1:
+                out = ord(op)
+            else:
+                out = op
+        elif type(op) == bool:
             out = [False, True].index(op)
         return out
 
@@ -77,8 +80,8 @@ class CodeGen():
             else:
                 if const == 0:
                     raise ValueError("除数不能为0！！")
-                self.asmcode.append('li '+'$at, '+str(const))
-                self.asmcode.append('div '+reg_op1+', '+'$at')
+                self.asmcode.append('li '+'$t8, '+str(const))
+                self.asmcode.append('div '+reg_op1+', '+'$t8')
                 self.asmcode.append('mfhi '+reg_lhs)
 
         elif type(op1) == Symbol and type(op2) == Symbol:
@@ -90,11 +93,14 @@ class CodeGen():
                 self.asmcode.append('div '+reg_op1+', '+reg_op2)
                 self.asmcode.append('mfhi '+reg_lhs)
 
-        elif type(op1) in const_type and type(op2) == None:
-            pass
+        elif type(op1) in const_type and op2 == None:
+            const = op1
+            if type(const) == bool:
+                const = [False, True].index(const)
+            self.asmcode.append('not {}, {}'.format(reg_lhs, reg_op1))
 
-    def handle_division(self):
-        pass
+        elif type(op1) == Symbol and op2 == None:
+            self.asmcode.append('not {}, {}'.format(reg_lhs, reg_op1))
 
     def handle_input(self, codeline):
         self.asmcode.append('\n# handle_input')
@@ -128,12 +134,60 @@ class CodeGen():
             self.asmcode.append('syscall')
 
     def handle_cmp(self, codeline):
-        print("[This line]: ", codeline)
-        pass
+        self.asmcode.append('\n# handle_cmp')
+
+        line_num, operation, lhs, op1, op2 = codeline
+        block_index = self.allocReg.line_block(line_num)
+        reg_op1 = self.handle_term(op1, block_index, line_num)
+        reg_op2 = self.handle_term(op2, block_index, line_num)
+        reg_lhs = self.handle_term(lhs, block_index, line_num)
+
+        if type(op1) in [str, int] and type(op2) in [str, int]:
+            if operation == '=':
+                operation = '=='
+            const = eval(str(op1)+' '+operation+' '+str(op2))
+            const = [False, True].index(const)
+            self.asmcode.append('addi {}, $0, {}'.format(reg_lhs, str(const)))
+        elif type(op1) == Symbol and type(op2) in [str, int]:
+            self.asmcode.append('li $t8, {}'.format(str(reg_op2)))
+            self.asmcode.append('{} {}, {}, $t8'.format(
+                op32_dict[operation], reg_lhs, reg_op1))
+
+        elif type(op1) == Symbol and type(op2) == Symbol:
+            self.asmcode.append('{} {}, {}, {}'.format(
+                op32_dict[operation], reg_lhs, reg_op1, reg_op2))
 
     def handle_jmp(self, codeline):
-        print("[This line]: ", codeline)
-        pass
+        self.asmcode.append('\n# handle_jmp')
+
+        line_num, operation, lhs, op1, op2 = codeline
+        block_index = self.allocReg.line_block(line_num)
+
+        print(lhs, op1, op2)
+        reg_op1 = self.handle_term(op1, block_index, line_num)
+        reg_op2 = self.handle_term(op2, block_index, line_num)
+        reg_lhs = self.handle_term(lhs, block_index, line_num)
+
+        const_type = [int, str, bool]
+        if operation.lower() == 'jmp':
+            self.asmcode.append('j {}'.format(reg_lhs))
+        else:
+            if type(op1) in const_type and type(op2) in const_type:
+                if operation.lower() == 'beq':
+                    if op1 == op2:
+                        self.asmcode.append('j {}'.format(reg_lhs))
+                if operation.lower() == 'bne':
+                    if op1 != op2:
+                        self.asmcode.append('j {}'.format(reg_lhs))
+
+            elif type(op1) == Symbol and type(op2) in const_type:
+                self.asmcode.append('li $t8, {}'.format(str(reg_op2)))
+                self.asmcode.append('{} {}, $t8, {}'.format(
+                    operation.lower(), reg_op1, reg_lhs))
+
+            elif type(op1) == Symbol and type(op2) == Symbol:
+                self.asmcode.append('{} {}, {}, {}'.format(
+                    operation.lower(), reg_op1, reg_op2, reg_lhs))
 
     def handle_label(self, codeline):
         self.asmcode.append('\n# handle_label')
@@ -246,13 +300,33 @@ class CodeGen():
         print(codeline)
         pass
 
+    def load_reg(self, reg):
+        kind = ['s', 't'].index(reg[1])  # s or t
+        num = reg[2]
+        self.asmcode.append("lw {}, {}($fp)".format(reg, (kind*8+(8-num))*4))
+
+    def store_reg(self, reg):
+        kind = ['s', 't'].index(reg[1])  # s or t
+        num = reg[2]
+        self.asmcode.append("sw {}, {}($fp)".format(reg, (kind*8+(8-num)*4)))
+
+    def load_mem(self, op, reg):
+        self.symtable.append("lw {}, {}($fp)".format(
+            reg, -self.symtable.get_identifier(op).offset))
+
+    def store_mem(self, op, reg):
+        self.asmcode.append("sw {}, {}($fp)".format(
+            reg, -self.symtable.get_identifier(op).offset))
+
     def tacToasm(self):
         for codeline in self.code:
             operation = codeline[1]
             if operation in binary_list:
                 self.handle_binary(codeline)
-            elif operation in ['BNE', 'BEQ', 'JMP']:
+            elif operation in ['>', '<', '>=', '<=', '=']:
                 self.handle_cmp(codeline)
+            elif operation in ['BNE', 'BEQ', 'JMP']:
+                self.handle_jmp(codeline)
             elif operation == 'LABEL':
                 self.handle_label(codeline)
             elif operation == 'CALL':

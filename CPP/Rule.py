@@ -63,9 +63,9 @@ op32_dict = {
     '/': 'div',
     '=': 'seq',
     '>=': 'sge',
-    '>':  'sgt',
+    '>': 'sgt',
     '<=': 'sle',
-    '<':  'slt',
+    '<': 'slt',
     'NOT': 'not',
     'DIV': 'div',
     'AND': 'and',
@@ -94,6 +94,7 @@ op32_dict_i = {
 }
 
 jump_list = ['JMP', 'JL', 'JLE', 'JG', 'JGE', 'JNE', 'JE', 'JZ']
-binary_list = ['+', '-', '*', '/', 'AND', 'OR', 'MOD', 'CMP', 'SHL', 'SHR']
+binary_list = ['+', '-', '*', '/', 'AND',
+               'OR', 'MOD', 'CMP', 'SHL', 'SHR', 'NOT']
 operatore_list = ['UNARY', '=', 'LOADREF', 'STOREREF', 'CALL',
                   'LABEL', 'PARAM', 'RETURN', 'RETURNVAL', 'PRINT', 'SCAN']
