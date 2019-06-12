@@ -27,6 +27,7 @@ class CodeGen():
         self.display_asm()
 
     def handle_term(self, op, block_index, line_num):
+        
         out = None
         if isinstance(op, Symbol):
             out = self.allocReg.getReg(op, block_index, line_num)
@@ -43,7 +44,6 @@ class CodeGen():
 
         line_num, operation, lhs, op1, op2 = codeline
         block_index = self.allocReg.line_block(line_num)
-
         reg_op1 = self.handle_term(op1, block_index, line_num)
         reg_op2 = self.handle_term(op2, block_index, line_num)
         reg_lhs = self.handle_term(lhs, block_index, line_num)
@@ -68,6 +68,7 @@ class CodeGen():
             self.asmcode.append(inst+' '+reg_lhs+', '+reg_op1+', '+reg_op2)
 
     def handle_division(self, codeline):
+        print("[This line]: ", codeline)
         pass
 
     def handle_input(self, codeline):
@@ -101,27 +102,54 @@ class CodeGen():
             self.asmcode.append('syscall')
 
     def handle_cmp(self, codeline):
+        print("[This line]: ", codeline)
         pass
 
     def handle_jmp(self, codeline):
+        print("[This line]: ", codeline)
         pass
 
     def handle_label(self, codeline):
+        self.asmcode.append('\n# handle_label')
+        print("[*** This line]: ", codeline)
+        if codeline[3] != None:
+            # TODO: 分配内存
+            # print(codeline[3])
+            print(self.symtable[codeline[3]])
+            print(self.symtable[codeline[3]].width)
+            self.asmcode.append(codeline[2]+':')
+            # self.asmcode.append(codeline[2]+':')
+            pass 
+            # codeline[]
+        else:
+            # 真的是一个label
+            self.asmcode.append(codeline[2]+':')
+            # self.asmcode.append(inst+' '+reg_lhs+', '+reg_op1+', '+str(const))
+            pass
         pass
 
     def handle_funccall(self, codeline):
+        print("[This line]: ", codeline)
+        
         pass
 
     def handle_params(self, codeline):
-        pass
+        print("[This line]: ", codeline)
+
 
     def handle_return(self, codeline):
+        print("[This line]: ", codeline)
+        # TODO: 返还栈的内存
+
         pass
 
     def handle_loadref(self, codeline):
+        print("[This line]: ", codeline)
         pass
 
     def handle_storeref(self, codeline):
+        print("[This line]: ", codeline)
+        print(codeline)
         pass
 
     def tacToasm(self):

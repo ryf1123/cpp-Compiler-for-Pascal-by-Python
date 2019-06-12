@@ -22,11 +22,10 @@ if __name__ == '__main__':
         
         print("[info] register allocation done")
         print("\n\n\n")
-
+            
         codegen = CodeGen.CodeGen(table, tac, allocReg)
-        
-        print("[info] code generation done")
         print("\n\n\n")
+        print("[info] code generation done")
         print("--------- This is the end of this program ---------")
 
     else:
