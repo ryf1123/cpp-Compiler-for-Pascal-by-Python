@@ -52,9 +52,9 @@ tokens = [
     'SEMI'
 ] + list(reserved.values())
 
-print(tokens)
-print()
-print(reserved)
+# print(tokens)
+# print()
+# print(reserved)
 
 
 class lexer:
@@ -148,7 +148,7 @@ if __name__ == '__main__':
     m = lexer
     # m.build()
     #m.test(" + ")
-    print("\n\n\nBegins~")
+    # print("\n\n\nBegins~")
     if len(sys.argv) > 1:
         f = open(sys.argv[1], "r")
         data = f.read()
