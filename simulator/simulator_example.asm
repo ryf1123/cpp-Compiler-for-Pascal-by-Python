@@ -1,11 +1,17 @@
-main:
-lw $4, 0($29)
-nop
-nop
-nop
-# jal func
+.data
+msg1: .asciiz "hello world"
 
-li $v0 10 
+.text
+.globl main
+main:
+
+li $v0, 6
 syscall
 
-# func:
+mov.s $f12, $f0
+
+li $v0, 2
+syscall
+
+li $v0, 10
+syscall
