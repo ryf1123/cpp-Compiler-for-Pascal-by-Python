@@ -72,6 +72,7 @@ class CodeGen():
         pass
 
     def handle_input(self, codeline):
+        self.asmcode.append('\n# handle_input')
         line_num, operation, lhs, op1, op2 = codeline
         block_index = self.allocReg.line_block(line_num)
         reg_lhs = self.handle_term(lhs, block_index, line_num)
@@ -114,11 +115,12 @@ class CodeGen():
         print("[*** This line]: ", codeline)
         if codeline[3] != None:
             # TODO: 分配内存
-            # print(codeline[3])
-            print(self.symtable[codeline[3]])
-            print(self.symtable[codeline[3]].width)
+            # print(self.symtable[codeline[3]])
+            # print(self.symtable[codeline[3]].width)
+
             self.asmcode.append(codeline[2]+':')
-            # self.asmcode.append(codeline[2]+':')
+            self.asmcode.append('addi'+ ' ' + '$sp $sp' + ' -' + str(self.symtable[codeline[3]].width))
+
             pass 
             # codeline[]
         else:
@@ -138,9 +140,12 @@ class CodeGen():
 
 
     def handle_return(self, codeline):
+        self.asmcode.append('\n# handle_return')
         print("[This line]: ", codeline)
-        # TODO: 返还栈的内存
+        # FIXME: 需要填好返回值 
 
+        self.asmcode.append('addi'+ ' ' + '$sp $sp' + ' +' + str(self.symtable[codeline[3]].width))
+        self.asmcode.append('jr $ra')
         pass
 
     def handle_loadref(self, codeline):
