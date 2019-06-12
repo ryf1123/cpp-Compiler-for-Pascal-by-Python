@@ -65,14 +65,10 @@ def p_program_head(p):
 
 
 def p_routine(p):
-    '''routine :  routine_head  main_label  routine_body'''
+    '''routine :  routine_head   routine_body'''
     p[0] = Node("routine", [p[1], p[2]])
 
 
-def p_main_label(p):
-    '''main_label :  '''
-    p[0] = Node("main_label", [])
-    emit("LABEL", "main")
 
 
 def p_sub_routine(p):
@@ -83,7 +79,7 @@ def p_sub_routine(p):
 def p_routine_head(p):
     '''routine_head :  label_part  const_part  type_part  var_part  routine_part'''
     p[0] = Node("routine_head", [p[1], p[2], p[3], p[4], p[5]])
-
+    emit("LABEL", "main")
 
 def p_label_part(p):
     '''label_part :  empty'''
@@ -110,7 +106,6 @@ def p_const_expr_list(p):
 
 def p_const_expr(p):
     """const_expr : NAME EQUAL const_value SEMI"""
-    # print("[ *** ]: ", p[1])
     p[0] = Node("const_expr", [p[1], p[3]])
 
     symbol = table.define(p[1], p[3].type, 'const', p[3].value)
@@ -379,11 +374,9 @@ def p_parameters(p):
                 |  empty'''
     if len(p) == 4:
         p[0] = Node("parameters", [p[2]])
-
         p[0].list = p[2].list
     else:
         p[0] = Node("parameters", [p[1]])
-
         p[0].list = []
 
 
@@ -616,7 +609,6 @@ def p_if_label3(p):
     '''if_label3 :  '''
 
     p[0] = Node("", [])
-
     emit('LABEL', p[-5].label3)
 
 
@@ -1052,8 +1044,8 @@ if __name__ == '__main__':
         f = open(sys.argv[1], "r")
         data = f.read()
         f.close()
-        result = parser.parse(data, debug=0)
-        # print(result)
+        result = parser.parse(data, debug=1)
+
 
         # print(drawTree(result))
         # print(table.scope())
