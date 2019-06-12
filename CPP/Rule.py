@@ -61,12 +61,31 @@ op32_dict = {
     '-':'subl',
     '*':'imull',
     '/':'idivl',
-    'AND':'and',
+    'DIV':'idivl',
+    'and':'and',
     'OR':'or',
+    'NOT':'not',
     'MOD':'mod',
-    'CMP':'cmp',
+    'BEQ':'beq',
+    'BNE':'bne',
     'SHL':'shll',
     'SHR':'shrl',
+}
+
+op32_dict_i = {
+    '+':'addi',
+    '-':'subi',
+    '*':'imuli',
+    '/':'idivi',
+    'DIV':'idivi',
+    'AND':'andi',
+    'OR':'ori',
+    'MOD':'modi',
+    'mod':'modi',
+    'BEQ':'beq',
+    'BNE':'bne',
+    'SHL':'shli',
+    'SHR':'shri',
 }
 
 jump_list = ['JMP', 'JL', 'JLE', 'JG', 'JGE', 'JNE', 'JE', 'JZ']

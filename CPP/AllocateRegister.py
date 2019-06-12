@@ -195,7 +195,7 @@ class AllocteRegister():
         return max_sym
 
 
-    def getReg(self, block_index, line_num, all_mem=False):
+    def getReg(self, op, block_index, line_num, all_mem=False):
         '''
             分配寄存器
         '''
@@ -203,7 +203,7 @@ class AllocteRegister():
         
         start, end = self.basic_blocks[block_index]
         reg = ''
-        msg = ''
+        # msg = ''
         
         line_num, operation, lhs, op1, op2 = code_line
         
@@ -219,18 +219,19 @@ class AllocteRegister():
         #     for sym in self.symbols:
         #         next_use_block[sym] = float("inf")
 
-        if op1 in self.symbol_register:
-            reg = self.symbol_register[op1]
+        if op in self.symbol_register:
+            reg = self.symbol_register[op]
             msg = 'replace op1'
 
-        elif op2 in self.symbol_register:
-            reg = self.symbol_register[op2]
-            msg = 'replace op2'
+        # elif op2 in self.symbol_register:
+        #     reg = self.symbol_register[op2]
+        #     msg = 'replace op2'
 
         elif len(self.unused_register)>0:
-            reg = self.unused_register[0]
+            reg = self.unused_register[0]          
             self.unused_register.remove(reg)
             self.used_register.append(reg)
+            self.symbol_register[op] = reg
             msg = 'did not replace'
         
         else:
@@ -240,7 +241,7 @@ class AllocteRegister():
         # else:
         #     reg = lhs
         #     msg = 'replace nothing'
-        return (reg, msg)
+        return reg
           
 
 

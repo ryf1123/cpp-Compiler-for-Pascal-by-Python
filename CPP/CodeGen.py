@@ -1,4 +1,4 @@
-from Rule import op32_dict, register_list, binary_list
+from Rule import op32_dict, op32_dict_i, register_list, binary_list
 from symbol_table import Symbol
 
 class CodeGen():
@@ -17,33 +17,49 @@ class CodeGen():
 
         #self.allocReg.block2label()
 
-        self.test = self.handle_binary(self.code[1])
+        # self.handle_binary(self.code[23])
+        # self.handle_binary(self.code[24])
+        for i in range(11):
+            self.handle_binary(self.code[i])
         
-        print(self.asmcode)
+        self.display_asm()
+    
+
+    def handle_term(self, op, block_index, line_num):
+        out = None
+        if isinstance(op, Symbol):
+            out = self.allocReg.getReg(op, block_index, line_num)
+        elif isinstance(op, int):
+            out = op
+        elif isinstance(op, bool):
+            out = op
+        return out
 
     
     def handle_binary(self, codeline):
         line_num, operation, lhs, op1, op2 = codeline
+        block_index = self.allocReg.line_block(line_num)
         
-        if isinstance(lhs, Symbol):
-            block_index = self.allocReg.line_block(line_num)
-            reg, msg = self.allocReg.getReg(block_index, line_num)
+        reg_op1 = self.handle_term(op1, block_index, line_num)
+        reg_op2 = self.handle_term(op2, block_index, line_num)
+        reg_lhs = self.handle_term(lhs, block_index, line_num)
 
-
-        inst = op32_dict[operation]
+        if type(op1) != int and type(op2) != int:
+            inst = op32_dict[operation]
+        else:
+            inst = op32_dict_i[operation]
+    
         if type(op1) == int and type(op2) == int:
             const = op1 + op2
-            self.asmcode.append(inst+' '+reg+', '+'$zero, '+str(const))
+            print(reg_lhs, reg_op1, reg_op2)
+            self.asmcode.append(inst+' '+reg_lhs+', '+'$zero, '+str(const))
         
+        elif type(op1) == Symbol and type(op2) == int:
+            const = op2
+            self.asmcode.append(inst+' '+reg_lhs+', '+reg_op1+', '+str(const))
 
-
-        
-
-
-        
-        print(reg, msg)
-        # op1 = self.handle_term(op1)
-        # op2 = self.handle_term(op2)
+        elif type(op1) == Symbol and type(op2) == Symbol:
+            self.asmcode.append(inst+' '+reg_lhs+', '+reg_op1+', '+reg_op2)
 
         
         
@@ -100,5 +116,10 @@ class CodeGen():
                 handle_binary(codeline)
             elif operation == 'CALL':
                 pass#handle_funccall
+    
+
+    def display_asm(self):
+        for line in self.asmcode:
+            print(line)
 
 
