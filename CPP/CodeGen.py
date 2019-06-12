@@ -16,7 +16,7 @@ class CodeGen():
 
         self.allocReg.get_basic_block()
         self.allocReg.iterate_block()
-
+        self.paraCounter = 0
         self.scopeStack = ['main']
 
         # self.allocReg.block2label()
@@ -26,7 +26,9 @@ class CodeGen():
         # for i in range(11):
         #     self.handle_binary(self.code[i])
         self.tacToasm()
-        self.paraCounter = 0
+        
+        self.asmcode.append('li $v0, 10')
+        self.asmcode.append('syscall')
         self.display_asm()
 
     def handle_term(self, op, block_index, line_num):
@@ -77,8 +79,8 @@ class CodeGen():
             else:
                 if const == 0:
                     raise ValueError("除数不能为0！！")
-                self.asmcode.append('li '+'$at, '+str(const))
-                self.asmcode.append('div '+reg_op1+', '+'$at')
+                self.asmcode.append('li '+'$t8, '+str(const))
+                self.asmcode.append('div '+reg_op1+', '+'$t8')
                 self.asmcode.append('mfhi '+reg_lhs)
 
         elif type(op1) == Symbol and type(op2) == Symbol:
@@ -105,13 +107,19 @@ class CodeGen():
         # TODO 只考虑输入整数
         self.asmcode.append('li $v0, 5')  # read int
         self.asmcode.append('syscall')
-        self.asmcode.append('addi ${}, $v0, 0'.format(reg_lhs))
+        self.asmcode.append('addi {}, $v0, 0'.format(reg_lhs))
 
     def handle_print(self, codeline):
         self.asmcode.append('\n# handle_print')
 
         line_num, operation, lhs, op1, op2 = codeline
         block_index = self.allocReg.line_block(line_num)
+
+        if operation == 'PRINTLN':
+            self.asmcode.append('li $v0, 11')
+            self.asmcode.append('addi $a0, $0, 32')
+            self.asmcode.append('syscall')
+            return
 
         if type(op1) == Symbol:
             reg_op1 = self.handle_term(op1, block_index, line_num)
@@ -174,20 +182,20 @@ class CodeGen():
             # 访问控制 = 当前活动访问控制
             # sp - 4 = 
             self.asmcode.append("# = parent's")
-            self.asmcode.append('lw $at 76($fp)')
-            self.asmcode.append('sw $at 0($sp)')
+            self.asmcode.append('lw $t8, 76($fp)')
+            self.asmcode.append('sw $t8, 0($sp)')
         else:
             self.asmcode.append('# = fp')
-            self.asmcode.append('sw $fp 0($sp)')
+            self.asmcode.append('sw $fp, 0($sp)')
             # 访问控制 = fp 
             
 
         # 控制链
-        self.asmcode.append('sw $fp -4($sp)')
+        self.asmcode.append('sw $fp, -4($sp)')
         
 
         # ra
-        self.asmcode.append('sw $ra -8($sp)')
+        self.asmcode.append('sw $ra, -8($sp)')
         # sw  $ra -8($sp)
 
         # reg
@@ -199,8 +207,8 @@ class CodeGen():
         # param 参数中处理
 
         # 
-        self.asmcode.append('addi $fp $sp -76')
-        self.asmcode.append('addi $sp $sp %d'%( - self.symtable[codeline[4]].width - 76))
+        self.asmcode.append('addi $fp, $sp, -76')
+        self.asmcode.append('addi $sp, $sp, %d'%( - self.symtable[codeline[4]].width - 76))
 
         # jal
         # self.asmcode.append("jal %s"%self.symtable[codeline[3]])
@@ -209,32 +217,70 @@ class CodeGen():
 
     def handle_params(self, codeline):
         print("[This line]: ", codeline)
+        self.asmcode.append('\n# handle_params')
+        # TODO: 只支持传基础类型
+        # if codeline
+        line_num, _, _, op1, _ = codeline
+        block_index = self.allocReg.line_block(line_num)
+        reg_op1 = self.handle_term(op1, block_index, line_num)
+
+        const_type = [int, str, bool]
+        if type(op1) in const_type:
+            self.asmcode.append('li $t8, %d'%reg_op1)
+            self.asmcode.append('sw $t8, -%d($sp)'%(76 + self.paraCounter*4))
+        else:
+            self.asmcode.append('sw %s, -%d($sp)'%(reg_op1, 76 + self.paraCounter*4))
+        # sw  -76($sp)
+
+        self.paraCounter += 1
 
 
     def handle_return(self, codeline):
         self.asmcode.append('\n# handle_return')
-        
-        self.scopeStack.pop()
+        line_num, _, lhs, _, _ = codeline
+
+        topDeleted = self.scopeStack.pop().lower()
 
         print("[This line]: ", codeline)
-        # FIXME: 需要填好返回值，然后放回ra，最后返还stack上分配的内存，返回
 
-        # TODO: 指针
+        # 指针
+        self.asmcode.append('addi $sp, $sp, %d'%(self.symtable[topDeleted].width + 76))
+        self.asmcode.append('addi $fp, $sp, 76')
 
         # TODO 恢复参数 （引用传递
+        # : 将返回值放到v0
+
+        if lhs == None:
+            pass
+        else:
+            self.asmcode.append('lw $v0, -%d($fp)'%self.symtable[topDeleted].get("_return").offset)
+
+        #  恢复寄存器
+        for index in range(8,24):
+            # SW R1, 0(R2)
+            # FIXME: 
+            self.asmcode.append("lw $%s, %d($sp)"%(index, -12 - (index-8)*4))
+
+        # 恢复返回地址 ra
+        self.asmcode.append('move $t8, $ra')
+
+        # ra'
+        self.asmcode.append('lw $ra, -8($sp)')
+
+        # FIXME: 需要填好返回值，然后放回ra，最后返还stack上分配的内存，返回
         
-        # TODO 恢复寄存器
 
-        # TODO 恢复返回地址 ra
+        if lhs == None:
+            pass
+        else:
+            block_index = self.allocReg.line_block(line_num)
+            reg_op1 = self.handle_term(lhs, block_index, line_num)
 
-        # TODO ra'
-
-
-
-
-        self.asmcode.append('addi' + ' ' + '$sp $sp' +
-                            ' +' + str(self.symtable[codeline[3]].width))
-        self.asmcode.append('jr $ra')
+            
+            self.asmcode.append('move %s, $v0'%(reg_op1))
+        # self.asmcode.append('addi' + ' ' + '$sp $sp' +
+        #                     ' +' + str(self.symtable[codeline[3]].width))
+        self.asmcode.append('jr $t8') # 这个地方不是跳转到ra，因为ra已经恢复成跳转之后的返回地址了
         pass
 
     def handle_loadref(self, codeline):
