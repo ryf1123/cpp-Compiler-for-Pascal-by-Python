@@ -22,7 +22,7 @@ precedence = (
 table = symbol.Table()
 tac = ThreeAC.ThreeAC(table)
 
-scopes = []  # 调试用
+scopes = {}
 
 
 def emit(op, lhs, op1=None, op2=None):
@@ -311,7 +311,7 @@ def p_function_decl(p):
     emit("RETURN", None, p[1].symbol)
 
     scope = table.del_scope()
-    scopes.append(scope)
+    scopes[scope.name] = scope
 
 
 def p_function_head(p):
@@ -327,7 +327,7 @@ def p_function_head(p):
 
     symbol = table.get_identifier('_return')
     p[0].symbol = symbol
-    emit("LABEL", p[2].name)
+    emit("LABEL", p[2].name, table.scope().name)
 
 
 def p_function_name(p):
@@ -346,7 +346,7 @@ def p_procedure_decl(p):
     emit("RETURN", None)
 
     scope = table.del_scope()
-    scopes.append(scope)
+    scopes[scope.name] = scope
 
 
 def p_procedure_head(p):
@@ -358,7 +358,7 @@ def p_procedure_head(p):
     for name, type in p[3].list:
         table.define(name, type)
 
-    emit("LABEL", p[2].name)
+    emit("LABEL", p[2].name, table.scope().name)
 
 
 def p_procedure_name(p):
@@ -1052,13 +1052,14 @@ if __name__ == '__main__':
 
         # print(drawTree(result))
         # print(table.scope())
+        scopes['main'] = table.scope()
         # for scope in scopes:
         #     print(scope)
 
         tac.addLinenum()
         tac.display()
-        allocReg = AllocateRegister.AllocteRegister(table, tac)
-        codegen = CodeGen.CodeGen(table, tac, allocReg)
+        allocReg = AllocateRegister.AllocteRegister(scopes, tac)
+        codegen = CodeGen.CodeGen(scopes, tac, allocReg)
 
     else:
         while True:
