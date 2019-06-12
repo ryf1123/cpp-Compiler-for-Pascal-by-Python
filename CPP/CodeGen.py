@@ -228,7 +228,7 @@ class CodeGen():
             self.asmcode.append(self.store_mem(
                 op, reg, self.scopeStack[-1].lower()))
 
-        self.symbol_register = {}
+        self.symbol_register.clear()
         self.allocReg.unused_register = unused_register_list.copy()
 
         self.paraCounter = 0
@@ -281,8 +281,8 @@ class CodeGen():
 
         # 将返回值从 $v0 中取出
         if codeline[2]:
-            block_index = self.allocReg.line_block(line_num)
-            reg_lhs = self.handle_term(codeline[2], block_index, line_num)
+            block_index = self.allocReg.line_block(codeline[0])
+            reg_lhs = self.handle_term(codeline[2], block_index, codeline[0])
 
             self.asmcode.append("move, {}, $v0".format(reg_lhs))
 
@@ -344,7 +344,7 @@ class CodeGen():
 
         self.asmcode.append('jr $t8')  # 这个地方不是跳转到ra，因为ra已经恢复成跳转之后的返回地址了
 
-        self.symbol_register = {}
+        self.symbol_register.clear()
         self.allocReg.unused_register = unused_register_list.copy()
 
     def handle_loadref(self, codeline):
@@ -357,30 +357,43 @@ class CodeGen():
         pass
 
     def tacToasm(self):
-        for codeline in self.code:
-            operation = codeline[1]
-            if operation in binary_list:
-                self.handle_binary(codeline)
-            elif operation in ['>', '<', '>=', '<=', '=']:
-                self.handle_cmp(codeline)
-            elif operation in ['BNE', 'BEQ', 'JMP']:
-                self.handle_jmp(codeline)
-            elif operation == 'LABEL':
-                self.handle_label(codeline)
-            elif operation == 'CALL':
-                self.handle_call(codeline)
-            elif operation == 'PARAM':
-                self.handle_params(codeline)
-            elif operation == 'RETURN':
-                self.handle_return(codeline)
-            elif operation == 'INPUT':
-                self.handle_input(codeline)
-            elif operation in ['PRINT', 'PRINTLN']:
-                self.handle_print(codeline)
-            elif operation == 'LOADREF':
-                self.handle_loadref(codeline)
-            elif operation == 'STOREREF':
-                self.handle_storeref(codeline)
+        print(self.allocReg.basic_blocks)
+        for i in range(len(self.allocReg.basic_blocks)):
+            start, end = self.allocReg.basic_blocks[i]
+            block_code = self.code[start:end+1]
+
+            for codeline in block_code:
+                operation = codeline[1]
+                if operation in binary_list:
+                    self.handle_binary(codeline)
+                elif operation in ['>', '<', '>=', '<=', '=']:
+                    self.handle_cmp(codeline)
+                elif operation in ['BNE', 'BEQ', 'JMP']:
+                    self.handle_jmp(codeline)
+                elif operation == 'LABEL':
+                    self.handle_label(codeline)
+                elif operation == 'CALL':
+                    self.handle_call(codeline)
+                elif operation == 'PARAM':
+                    self.handle_params(codeline)
+                elif operation == 'RETURN':
+                    self.handle_return(codeline)
+                elif operation == 'INPUT':
+                    self.handle_input(codeline)
+                elif operation in ['PRINT', 'PRINTLN']:
+                    self.handle_print(codeline)
+                elif operation == 'LOADREF':
+                    self.handle_loadref(codeline)
+                elif operation == 'STOREREF':
+                    self.handle_storeref(codeline)
+
+            print(self.symbol_register)
+            for op in self.symbol_register:
+                reg = self.symbol_register[op]
+                self.asmcode.append(self.store_mem(
+                    op, reg, self.scopeStack[-1].lower()))
+            self.symbol_register.clear()
+            self.allocReg.unused_register = unused_register_list.copy()
 
     def display_asm(self):
         for line in self.asmcode:

@@ -15,7 +15,7 @@ class AllocteRegister():
         self.next_use = []
         # 每个基本块对应一个label名
         self.block_label = {}
-        # {[startline, endline]: label_name}
+        # {(startline, endline): label_name}
 
         # 寄存器 存了哪些symbol
         # self.register_symbol = {}
@@ -202,6 +202,7 @@ class AllocteRegister():
             self.unused_register.remove(reg)
             self.symbol_register[op] = reg
 
+            # print(self.symbol_register)
             asmcode.append(self.load_mem(op, reg, scope))
 
         else:
@@ -212,5 +213,9 @@ class AllocteRegister():
 
             self.symbol_register[op] = reg
             asmcode.append(self.load_mem(op, reg, scope))
+
+        # print("+++++")
+        # for op in self.symbol_register:
+        #     print(op, self.symbol_register[op])
 
         return reg, asmcode
