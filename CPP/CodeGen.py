@@ -27,7 +27,7 @@ class CodeGen():
         self.display_asm()
 
     def handle_term(self, op, block_index, line_num):
-        
+
         out = None
         if isinstance(op, Symbol):
             out = self.allocReg.getReg(op, block_index, line_num)
@@ -54,21 +54,43 @@ class CodeGen():
             inst = op32_dict_i[operation]
 
         const_type = [int, str, bool]
-
         if type(op1) in const_type and type(op2) in const_type:
-
+            if operation.lower() == 'mod':
+                operation = '%'
             const = eval(str(op1)+' '+operation.lower()+' '+str(op2))
-            self.asmcode.append(inst+' '+reg_lhs+', '+'$zero, '+str(const))
+            if type(const) == bool:
+                const = [False, True].index(const)
+            self.asmcode.append('addi'+' '+reg_lhs+', '+'$0, '+str(const))
 
         elif type(op1) == Symbol and type(op2) in const_type:
             const = reg_op2
-            self.asmcode.append(inst+' '+reg_lhs+', '+reg_op1+', '+str(const))
+            if type(const) == bool:
+                const = [False, True].index(const)
+            if operation.lower() != 'mod':
+                if operation.lower() == 'div' and const == 0:
+                    raise ValueError("除数不能为0！！")
+                self.asmcode.append(inst+' '+reg_lhs+', ' +
+                                    reg_op1+', '+str(const))
+            else:
+                if const == 0:
+                    raise ValueError("除数不能为0！！")
+                self.asmcode.append('li '+'$at, '+str(const))
+                self.asmcode.append('div '+reg_op1+', '+'$at')
+                self.asmcode.append('mfhi '+reg_lhs)
 
         elif type(op1) == Symbol and type(op2) == Symbol:
-            self.asmcode.append(inst+' '+reg_lhs+', '+reg_op1+', '+reg_op2)
+            if operation.lower() != 'mod':
+                self.asmcode.append(inst+' '+reg_lhs+', '+reg_op1+', '+reg_op2)
+            else:
+                self.asmcode.append('bne '+reg_op2+', '+'$0, '+'0')
+                self.asmcode.append('break')
+                self.asmcode.append('div '+reg_op1+', '+reg_op2)
+                self.asmcode.append('mfhi '+reg_lhs)
 
-    def handle_division(self, codeline):
-        print("[This line]: ", codeline)
+        elif type(op1) in const_type and type(op2) == None:
+            pass
+
+    def handle_division(self):
         pass
 
     def handle_input(self, codeline):
@@ -125,9 +147,10 @@ class CodeGen():
         if codeline[3] != None:
             # TODO: 分配内存
             self.asmcode.append(codeline[2]+':')
-            self.asmcode.append('addi'+ ' ' + '$sp $sp' + ' -' + str(self.symtable[codeline[3]].width))
+            self.asmcode.append('addi' + ' ' + '$sp $sp' +
+                                ' -' + str(self.symtable[codeline[3]].width))
 
-            pass 
+            pass
             # codeline[]
         else:
             # 真的是一个label
@@ -175,7 +198,6 @@ class CodeGen():
     def handle_params(self, codeline):
         print("[This line]: ", codeline)
 
-
     def handle_return(self, codeline):
         self.asmcode.append('\n# handle_return')
         print("[This line]: ", codeline)
@@ -194,7 +216,8 @@ class CodeGen():
 
 
 
-        self.asmcode.append('addi'+ ' ' + '$sp $sp' + ' +' + str(self.symtable[codeline[3]].width))
+        self.asmcode.append('addi' + ' ' + '$sp $sp' +
+                            ' +' + str(self.symtable[codeline[3]].width))
         self.asmcode.append('jr $ra')
         pass
 
