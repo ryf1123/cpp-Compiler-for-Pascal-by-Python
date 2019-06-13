@@ -65,10 +65,14 @@ def p_program_head(p):
 
 
 def p_routine(p):
-    '''routine :  routine_head   routine_body'''
+    '''routine :  routine_head  main_label  routine_body'''
     p[0] = Node("routine", [p[1], p[2]])
 
 
+def p_main_label(p):
+    '''main_label :  '''
+    p[0] = Node("main_label", [])
+    emit("LABEL", "main")
 
 
 def p_sub_routine(p):
@@ -79,7 +83,7 @@ def p_sub_routine(p):
 def p_routine_head(p):
     '''routine_head :  label_part  const_part  type_part  var_part  routine_part'''
     p[0] = Node("routine_head", [p[1], p[2], p[3], p[4], p[5]])
-    emit("LABEL", "main")
+
 
 def p_label_part(p):
     '''label_part :  empty'''
@@ -639,7 +643,7 @@ def p_repeat_label2(p):
 
     p[0] = Node("", [])
 
-    emit('BNE', p[-4].label, p[-1], False)
+    emit('BEQ', p[-4].label, p[-1], False)
 
 
 def p_while_stmt(p):
@@ -1046,7 +1050,6 @@ if __name__ == '__main__':
         f.close()
         result = parser.parse(data, debug=1)
 
-
         # print(drawTree(result))
         # print(table.scope())
         scopes['main'] = table.scope()
@@ -1059,6 +1062,7 @@ if __name__ == '__main__':
         # exit()
         tac.addLinenum()
         tac.display()
+        # exit()
         allocReg = AllocateRegister.AllocteRegister(scopes, tac)
         codegen = CodeGen.CodeGen(scopes, tac, allocReg)
 

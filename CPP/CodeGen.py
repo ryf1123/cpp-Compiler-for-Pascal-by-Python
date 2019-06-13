@@ -89,8 +89,8 @@ class CodeGen():
             if operation.lower() != 'mod':
                 self.asmcode.append(inst+' '+reg_lhs+', '+reg_op1+', '+reg_op2)
             else:
-                self.asmcode.append('bne '+reg_op2+', '+'$0, '+'0')
-                self.asmcode.append('break')
+                # self.asmcode.append('bne '+reg_op2+', '+'$0, '+'8')
+                # self.asmcode.append('break')
                 self.asmcode.append('div '+reg_op1+', '+reg_op2)
                 self.asmcode.append('mfhi '+reg_lhs)
 
@@ -214,10 +214,11 @@ class CodeGen():
         pass
 
     def load_mem(self, op, reg, scope):
-        return "lw {}, {}($fp)".format(reg, -self.symtable[scope].get(op.name).offset)
+        print("!!!!!", op)
+        return "lw {}, {}($fp)".format(reg, -op.offset)
 
     def store_mem(self, op, reg, scope):
-        return "sw {}, {}($fp)".format(reg, -self.symtable[scope].get(op.name).offset)
+        return "sw {}, {}($fp)".format(reg, -op.offset)
 
     def handle_call(self, codeline):
 
@@ -273,7 +274,7 @@ class CodeGen():
         #
         self.asmcode.append('addi $fp $sp -76')
         self.asmcode.append('addi $sp $sp %d' %
-                            (- self.symtable[codeline[4]].width - 76))
+                            (- self.symtable[codeline[4]+'.'+codeline[3]].width - 76))
 
         # jal
         # self.asmcode.append("jal %s"%self.symtable[codeline[3]])
@@ -314,11 +315,6 @@ class CodeGen():
 
         print("[This line]: ", codeline)
 
-        # 指针
-        self.asmcode.append('addi $sp, $sp, %d' %
-                            (self.symtable[topDeleted].width + 76))
-        self.asmcode.append('addi $fp, $sp, 76')
-
         # TODO 恢复参数 （引用传递
         # : 将返回值放到v0
 
@@ -327,6 +323,11 @@ class CodeGen():
         else:
             self.asmcode.append('lw $v0, -%d($fp)' %
                                 self.symtable[topDeleted].get("_return").offset)
+
+        # 指针
+        self.asmcode.append('addi $sp, $sp, %d' %
+                            (self.symtable[topDeleted].width + 76))
+        self.asmcode.append('addi $fp, $sp, 76')
 
         #  恢复寄存器
         for index in range(8, 24):
@@ -369,7 +370,16 @@ class CodeGen():
                 elif operation in ['>', '<', '>=', '<=', '=']:
                     self.handle_cmp(codeline)
                 elif operation in ['BNE', 'BEQ', 'JMP']:
-                    self.handle_jmp(codeline)
+                    if codeline == block_code[-1]:
+                        for op in self.symbol_register:
+                            reg = self.symbol_register[op]
+                            self.asmcode.append(self.store_mem(
+                                op, reg, self.scopeStack[-1].lower()))
+                        self.handle_jmp(codeline)
+                        self.symbol_register.clear()
+                        self.allocReg.unused_register = unused_register_list.copy()
+                    else:
+                        self.handle_jmp(codeline)
                 elif operation == 'LABEL':
                     self.handle_label(codeline)
                 elif operation == 'CALL':
@@ -387,13 +397,13 @@ class CodeGen():
                 elif operation == 'STOREREF':
                     self.handle_storeref(codeline)
 
-            print(self.symbol_register)
-            for op in self.symbol_register:
-                reg = self.symbol_register[op]
-                self.asmcode.append(self.store_mem(
-                    op, reg, self.scopeStack[-1].lower()))
-            self.symbol_register.clear()
-            self.allocReg.unused_register = unused_register_list.copy()
+            if block_code[-1][1] not in ['JMP', 'BNE', 'BEQ']:
+                for op in self.symbol_register:
+                    reg = self.symbol_register[op]
+                    self.asmcode.append(self.store_mem(
+                        op, reg, self.scopeStack[-1].lower()))
+                self.symbol_register.clear()
+                self.allocReg.unused_register = unused_register_list.copy()
 
     def display_asm(self):
         for line in self.asmcode:
