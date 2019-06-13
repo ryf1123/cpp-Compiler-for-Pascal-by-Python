@@ -639,7 +639,7 @@ def p_repeat_label2(p):
 
     p[0] = Node("", [])
 
-    emit('JNE', p[-4].label, p[-1], False)
+    emit('BNE', p[-4].label, p[-1], False)
 
 
 def p_while_stmt(p):
