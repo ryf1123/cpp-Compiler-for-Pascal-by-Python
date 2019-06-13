@@ -166,14 +166,38 @@ class AllocteRegister():
 
         return max_sym
 
-    def load_mem(self, op, reg, scope):
-        print("!!!!!", op)
-        return "lw {}, {}($fp)".format(reg, -op.offset)
+    def offset(self, op, scope_stack):
+        try:
+            return self.symtable[scope_stack[-1]].get(op.name).offset, None
+        except ValueError:
+            code = ['move $t9, $fp']
+            scope_index = -1
+            while True:
+                scope_index -= 1
+                scope = self.symtable[scope_stack[scope_index]]
+                code.append('lw $t9, 76($t9)')
+                try:
+                    return scope.get(op.name).offset, code
+                except ValueError:
+                    pass
 
-    def store_mem(self, op, reg, scope):
-        return "sw {}, {}($fp)".format(reg, -op.offset)
+    def load_mem(self, op, reg, scope_stack):
+        off, code = self.offset(op, scope_stack)
 
-    def getReg(self, op, block_index, line_num, scope):
+        if code is None:
+            return "lw {}, {}($fp)".format(reg, -off)
+        else:
+            return '\n'.join(code + ["lw {}, {}($t9)".format(reg, -off)])
+
+    def store_mem(self, op, reg, scope_stack):
+        off, code = self.offset(op, scope_stack)
+
+        if code is None:
+            return "sw {}, {}($fp)".format(reg, -off)
+        else:
+            return '\n'.join(code + ["sw {}, {}($t9)".format(reg, -off)])
+
+    def getReg(self, op, block_index, line_num, scope_stack):
         '''
             分配寄存器
         '''
@@ -206,17 +230,17 @@ class AllocteRegister():
 
             # print(self.symbol_register)
             print(op)
-            asmcode.append(self.load_mem(op, reg, scope))
+            asmcode.append(self.load_mem(op, reg, scope_stack))
 
         else:
             var = self.get_block_maxuse(block_index, line_num)
             reg = self.symbol_register[var]
-            asmcode.append(self.store_mem(var, reg, scope))
+            asmcode.append(self.store_mem(var, reg, scope_stack))
             del self.symbol_register[var]
 
             self.symbol_register[op] = reg
             print(op)
-            asmcode.append(self.load_mem(op, reg, scope))
+            asmcode.append(self.load_mem(op, reg, scope_stack))
 
         # print("+++++")
         # for op in self.symbol_register:

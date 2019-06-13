@@ -32,7 +32,7 @@ class CodeGen():
         out = None
         if type(op) == Symbol:
             out, code = self.allocReg.getReg(
-                op, block_index, line_num, self.scopeStack[-1].lower())
+                op, block_index, line_num, self.scopeStack)
             self.asmcode += code
 
         elif type(op) == int:
@@ -204,8 +204,14 @@ class CodeGen():
         if codeline[3] != None:
 
             # bassAddr = str(self.symtable[codeline[3]].width)
-            self.scopeStack.append(self.scopeStack[-1]+'.'+codeline[2])
+            self.scopeStack.append('{}.{}'.format(
+                self.scopeStack[-1], codeline[2]).lower())
             self.asmcode.append(codeline[2]+':')
+        elif codeline[2] == 'main':
+            self.asmcode.append(codeline[2] + ':')
+            self.asmcode.append('move $fp, $sp')
+            self.asmcode.append('addi $sp, $sp, {}'.format(
+                -self.symtable['main'].width))
         else:
             # 真的是一个label
             self.asmcode.append(codeline[2]+':')
@@ -213,12 +219,8 @@ class CodeGen():
             pass
         pass
 
-    def load_mem(self, op, reg, scope):
-        print("!!!!!", op)
-        return "lw {}, {}($fp)".format(reg, -op.offset)
-
-    def store_mem(self, op, reg, scope):
-        return "sw {}, {}($fp)".format(reg, -op.offset)
+    def store_mem(self, op, reg, scope_stack):
+        return self.allocReg.store_mem(op, reg, scope_stack)
 
     def handle_call(self, codeline):
 
@@ -227,7 +229,7 @@ class CodeGen():
         for op in self.symbol_register.keys():
             reg = self.symbol_register[op]
             self.asmcode.append(self.store_mem(
-                op, reg, self.scopeStack[-1].lower()))
+                op, reg, self.scopeStack))
 
         self.symbol_register.clear()
         self.allocReg.unused_register = unused_register_list.copy()
@@ -273,8 +275,9 @@ class CodeGen():
 
         #
         self.asmcode.append('addi $fp $sp -76')
-        self.asmcode.append('addi $sp $sp %d' %
-                            (- self.symtable[codeline[4]+'.'+codeline[3]].width - 76))
+        scope_width = self.symtable['%s.%s' %
+                                    (codeline[4], codeline[3].lower())].width
+        self.asmcode.append('addi $sp $sp %d' % -(scope_width + 76))
 
         # jal
         # self.asmcode.append("jal %s"%self.symtable[codeline[3]])
@@ -311,9 +314,16 @@ class CodeGen():
         self.asmcode.append('\n# handle_return')
         line_num, _, lhs, _, _ = codeline
 
-        topDeleted = self.scopeStack.pop().lower()
-
         print("[This line]: ", codeline)
+
+        # 寄存器存回内存
+        for op in self.symbol_register:
+            reg = self.symbol_register[op]
+            self.asmcode.append(self.store_mem(op, reg, self.scopeStack))
+        self.symbol_register.clear()
+        self.allocReg.unused_register = unused_register_list.copy()
+
+        topDeleted = self.scopeStack.pop().lower()
 
         # TODO 恢复参数 （引用传递
         # : 将返回值放到v0
@@ -327,7 +337,7 @@ class CodeGen():
         # 指针
         self.asmcode.append('addi $sp, $sp, %d' %
                             (self.symtable[topDeleted].width + 76))
-        self.asmcode.append('addi $fp, $sp, 76')
+        self.asmcode.append('lw $fp, 72($fp)')
 
         #  恢复寄存器
         for index in range(8, 24):
@@ -344,9 +354,6 @@ class CodeGen():
         # FIXME: 需要填好返回值，然后放回ra，最后返还stack上分配的内存，返回
 
         self.asmcode.append('jr $t8')  # 这个地方不是跳转到ra，因为ra已经恢复成跳转之后的返回地址了
-
-        self.symbol_register.clear()
-        self.allocReg.unused_register = unused_register_list.copy()
 
     def handle_loadref(self, codeline):
         print("[This line]: ", codeline)
@@ -374,7 +381,7 @@ class CodeGen():
                         for op in self.symbol_register:
                             reg = self.symbol_register[op]
                             self.asmcode.append(self.store_mem(
-                                op, reg, self.scopeStack[-1].lower()))
+                                op, reg, self.scopeStack))
                         self.handle_jmp(codeline)
                         self.symbol_register.clear()
                         self.allocReg.unused_register = unused_register_list.copy()
@@ -401,7 +408,7 @@ class CodeGen():
                 for op in self.symbol_register:
                     reg = self.symbol_register[op]
                     self.asmcode.append(self.store_mem(
-                        op, reg, self.scopeStack[-1].lower()))
+                        op, reg, self.scopeStack))
                 self.symbol_register.clear()
                 self.allocReg.unused_register = unused_register_list.copy()
 
