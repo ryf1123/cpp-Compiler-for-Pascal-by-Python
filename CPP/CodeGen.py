@@ -320,6 +320,25 @@ class CodeGen():
 
         self.paraCounter += 1
 
+    def handle_refers(self, codeline):
+        print("[This line]: ", codeline)
+        self.asmcode.append('\n# handle_refers')
+        # TODO: 只支持传基础类型
+        # if codeline
+        line_num, _, _, op1, _ = codeline
+        block_index = self.allocReg.line_block(line_num)
+        reg_op1 = self.handle_term(op1, block_index, line_num)
+
+        if op1.reference:
+            self.asmcode.append('sw %s, -%d($sp)' %
+                                (reg_op1, 76 + self.paraCounter * 4))
+        else:
+            self.asmcode.append("addi $t8, $fp, %d" % (76 + op1.offset))
+            self.asmcode.append('sw $t8, -%d($sp)' %
+                                (76 + self.paraCounter * 4))
+
+        self.paraCounter += 1
+
     def handle_return(self, codeline):
         self.asmcode.append('\n# handle_return')
         line_num, _, lhs, _, _ = codeline
@@ -403,6 +422,8 @@ class CodeGen():
                     self.handle_call(codeline)
                 elif operation == 'PARAM':
                     self.handle_params(codeline)
+                elif operation == 'REFER':
+                    self.handle_refers(codeline)
                 elif operation == 'RETURN':
                     self.handle_return(codeline)
                 elif operation == 'INPUT':

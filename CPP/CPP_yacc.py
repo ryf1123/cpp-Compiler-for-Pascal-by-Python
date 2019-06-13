@@ -323,12 +323,13 @@ def p_function_head(p):
     '''function_head :  FUNCTION  function_name  parameters  COLON  simple_type_decl '''
     p[0] = Node("function_head", [p[3], p[5]])
 
-    for name, type in p[3].list:
-        table.define(name, type)
+    for name, type, reference in p[3].list:
+        table.define(name, type, reference=reference)
     table.define('_return', p[5].type, 'var', p[3].list)
 
     table.scope().return_type = p[5].type
     table.get_identifier(p[2].name).type = p[5].type
+    table.get_identifier(p[2].name).params = p[3].list
 
     symbol = table.get_identifier('_return')
     p[0].symbol = symbol
@@ -358,8 +359,8 @@ def p_procedure_head(p):
     '''procedure_head :  PROCEDURE procedure_name parameters '''
     p[0] = Node("procedure_head", [p[3]])
 
-    for name, type in p[3].list:
-        table.define(name, type)
+    for name, type, reference in p[3].list:
+        table.define(name, type, reference=reference)
 
     emit("LABEL", p[2].name, table.scope().name)
 
@@ -397,14 +398,23 @@ def p_para_decl_list(p):
         p[0].list = p[1].list
 
 
-def p_para_type_list(p):
-    '''para_type_list :  var_para_list  COLON  simple_type_decl
-                      |  val_para_list  COLON  simple_type_decl'''
+def p_para_type_list_1(p):
+    '''para_type_list :  var_para_list  COLON  simple_type_decl'''
+    p[0] = Node("para_type_list", [p[1], p[3]])
+
+    p[0].list = [
+        (name, p[3].type, True)
+        for name in p[1].list
+    ]
+
+
+def p_para_type_list_2(p):
+    '''para_type_list :  val_para_list  COLON  simple_type_decl'''
 
     p[0] = Node("para_type_list", [p[1], p[3]])
 
     p[0].list = [
-        (name, p[3].type)
+        (name, p[3].type, False)
         for name in p[1].list
     ]
 
@@ -534,13 +544,22 @@ def p_assign_stmt_3(p):
 
 def p_proc_stmt_proc(p):
     '''proc_stmt :  NAME
-                |  NAME  LP  args_list  RP'''
+                | NAME LP args_list RP '''
+
+    procedure = table.get_identifier(p[1])
+
     if len(p) == 2:
         p[0] = Node("proc_stmt", [p[1]])
+        params = []
 
     elif len(p) == 5:
         p[0] = Node("proc_stmt", [p[1], p[3]])
-        for name in p[3].list:
+        params = p[3].list
+
+    for name, param in zip(params, procedure.params):
+        if param[2]:
+            emit("REFER", None, name)
+        else:
             emit("PARAM", None, name)
 
     emit("CALL", None, p[1], table.get_identifier_scope(p[1]))
@@ -936,11 +955,16 @@ def p_factor_function(p):
     # TODO
     p[0] = Node("p_factor_function", [p[3]])
 
-    p[0].value = None
-    p[0].type = table.get_identifier(p[1]).type
+    function = table.get_identifier(p[1])
 
-    for item in p[3].list:
-        emit("PARAM", None, item)
+    p[0].value = None
+    p[0].type = function.type
+
+    for item, param in zip(p[3].list, function.params):
+        if param[2]:
+            emit("REFER", None, item)
+        else:
+            emit("PARAM", None, item)
 
     symbol = table.get_temp(p[0].type)
     emit("CALL", symbol, p[1], table.get_identifier_scope(p[1]))
