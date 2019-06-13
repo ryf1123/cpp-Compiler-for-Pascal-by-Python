@@ -78,20 +78,20 @@ op32_dict = {
     'SHR': 'shr',
 }
 
-op32_dict_i = {
-    '+': 'addi',
-    '-': 'subi',
-    '*': 'mul',
-    '/': 'div',
-    'DIV': 'div',
-    'AND': 'and',
-    'OR': 'or',
-    'MOD': 'mod',
-    'BEQ': 'beq',
-    'BNE': 'bne',
-    'SHL': 'shl',
-    'SHR': 'shr',
-}
+# op32_dict_i = {
+#     '+': 'add',
+#     '-': 'sub',
+#     '*': 'mul',
+#     '/': 'div',
+#     'DIV': 'div',
+#     'AND': 'and',
+#     'OR': 'or',
+#     'MOD': 'mod',
+#     'BEQ': 'beq',
+#     'BNE': 'bne',
+#     'SHL': 'shl',
+#     'SHR': 'shr',
+# }
 
 jump_list = ['JMP', 'JL', 'JLE', 'JG', 'JGE', 'JNE', 'JE', 'JZ']
 binary_list = ['+', '-', '*', '/', 'AND',

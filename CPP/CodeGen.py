@@ -1,4 +1,4 @@
-from Rule import op32_dict, op32_dict_i, register_list, binary_list, unused_register_list
+from Rule import op32_dict, register_list, binary_list, unused_register_list
 from symbol_table import Symbol
 
 
@@ -55,10 +55,7 @@ class CodeGen():
         reg_op2 = self.handle_term(op2, block_index, line_num)
         reg_lhs = self.handle_term(lhs, block_index, line_num)
 
-        if type(op1) != int and type(op2) != int:
-            inst = op32_dict[operation]
-        else:
-            inst = op32_dict_i[operation]
+        inst = op32_dict[operation]
 
         const_type = [int, str, bool]
         if type(op1) in const_type and type(op2) in const_type:
@@ -76,13 +73,26 @@ class CodeGen():
             if operation.lower() != 'mod':
                 if operation.lower() == 'div' and const == 0:
                     raise ValueError("除数不能为0！！")
+                self.asmcode.append('li '+'$t8, '+str(const))
                 self.asmcode.append(inst+' '+reg_lhs+', ' +
-                                    reg_op1+', '+str(const))
+                                    reg_op1+', $t8')
             else:
                 if const == 0:
                     raise ValueError("除数不能为0！！")
                 self.asmcode.append('li '+'$t8, '+str(const))
                 self.asmcode.append('div '+reg_op1+', '+'$t8')
+                self.asmcode.append('mfhi '+reg_lhs)
+
+        elif type(op1) in const_type and type(op2) == Symbol:
+            const = reg_op1
+            if type(const) == bool:
+                const = [False, True].index(const)
+            if operation.lower() != 'mod':
+                self.asmcode.append('li '+'$t8, '+str(const))
+                self.asmcode.append(inst+' '+reg_lhs+', '+'$t8, '+reg_op2)
+            else:
+                self.asmcode.append('li '+'$t8, '+str(const))
+                self.asmcode.append('div '+'$t8, '+reg_op2)
                 self.asmcode.append('mfhi '+reg_lhs)
 
         elif type(op1) == Symbol and type(op2) == Symbol:
