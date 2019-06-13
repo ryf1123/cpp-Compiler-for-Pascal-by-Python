@@ -75,7 +75,7 @@ class Symbol:
 
             return symbol.size
 
-    def __init__(self, name, type, var_function="var", offset=0, params=None):
+    def __init__(self, name, type, var_function="var", offset=0, params=None, reference=False):
         '''初始化一个符号
 
         name:           符号名
@@ -105,6 +105,8 @@ class Symbol:
                             ...
                         ]
                         如果是 const 那么 params 传递常量的值。
+
+        reference:
         '''
 
         self.name = name.lower()
@@ -113,14 +115,16 @@ class Symbol:
         self.offset = offset
         self.params = params
         self.size = self._get_size()
+        self.reference = reference
 
     def __str__(self):
-        return 'Symbol(`%s`, %s, %s, %s%s)' % (
+        return 'Symbol(`%s`, %s, %s, %s%s%s)' % (
             str(self.name),
             str(self.type),
             str(self.var_function),
             str(self.offset),
-            ', ' + str(self.params) if self.params is not None else '')
+            ', ' + str(self.params) if self.params is not None else '',
+            ', *'if self.reference else '')
 
     def get_params(self):
         if self.params is not None:
@@ -158,7 +162,7 @@ class Scope:
             list_format(list(self.temps.values())),
         )
 
-    def define(self, name, type, var_function='var', params=None):
+    def define(self, name, type, var_function='var', params=None, reference=False):
         '''定义一个新符号'''
 
         name = name.lower()
@@ -168,7 +172,7 @@ class Scope:
             sys.exit('Name `%s` is already defined. ' % name)
 
         symbol = Symbol(name, type, var_function,
-                        offset=self.width, params=params)
+                        offset=self.width, params=params, reference=reference)
         self.symbols[name] = symbol
 
         if var_function in ('var', 'const'):
@@ -271,10 +275,10 @@ class Table:
         except:
             return self.get_identifier_scope(name.lower(), index - 1)
 
-    def set_identifier(self, name, type, var_function='var', params=None):
+    def set_identifier(self, name, type, var_function='var', params=None, reference=False):
         '''定义一个新名字'''
 
-        return self.table[-1].define(name, type, var_function, params)
+        return self.table[-1].define(name, type, var_function, params, reference)
 
     define = set_identifier
 
