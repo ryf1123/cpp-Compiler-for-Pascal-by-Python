@@ -40,7 +40,7 @@ def traversal(graph, node):
         print(node.type)
         print("node.children:", node.children)
         for child in node.children:
-            # FIXME: 用于完善代码时取消忽略判断，但是真实情况应该忽略None
+            #: 用于完善代码时取消忽略判断，但是真实情况应该忽略None
             if (not isinstance(child, str)):
                 # if (not child == None) and (not isinstance(child, str)):
                 print("node.id, child:", node.id, child, node.type)
@@ -53,7 +53,7 @@ def traversal(graph, node):
                     # pass
             else:
                 # 是str
-                # FIXME: 由于常量数字非常容易重复，所以需要加上一个随机数
+                #: 由于常量数字非常容易重复，所以需要加上一个随机数
                 edge = pydot.Edge(node.id, child+"%10d" %
                                   (round(random.random() * 100000000)))
                 graph.add_edge(edge)

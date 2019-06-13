@@ -1,11 +1,14 @@
 program types;
 var
-   i : real;
+   i : integer;
 begin
-	i := 3.2;
-	i := 1.0 + i;
+	i := 3;
+	i := i + 1;
 	writeln(i);
 	writeln(1);
-	
-
 end.
+
+
+
+
+

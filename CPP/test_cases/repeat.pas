@@ -7,3 +7,7 @@ begin
       x := x + 1;
    until x = 31;
 end.
+
+
+
+
