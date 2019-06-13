@@ -87,13 +87,11 @@ class lexer:
     t_SEMI = r'\;'
     t_CHAR = r'(\'([^\\\'\.]?)\')|(\"([^\\\"\.]?)\")'
 
-    # 系统函数还未实现
     def t_NAME(self, t):
         r'[A-Za-z](_?[A-Za-z0-9])*'  # (\.[A-Za-z](_?[A-Za-z0-9])*)?'
         t.type = reserved.get(t.value.lower(), 'NAME')
         return t
-
-    # 先这样重复着写
+        
     def t_ID(self, t):
         r'[A-Za-z](_?[A-Za-z0-9])*'  # (\.[A-Za-z](_?[A-Za-z0-9])*)?'
         t.type = reserved.get(t.value.lower(), 'ID')
