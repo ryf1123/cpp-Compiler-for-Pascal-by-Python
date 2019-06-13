@@ -369,7 +369,16 @@ class CodeGen():
                 elif operation in ['>', '<', '>=', '<=', '=']:
                     self.handle_cmp(codeline)
                 elif operation in ['BNE', 'BEQ', 'JMP']:
-                    self.handle_jmp(codeline)
+                    if codeline == block_code[-1]:
+                        for op in self.symbol_register:
+                            reg = self.symbol_register[op]
+                            self.asmcode.append(self.store_mem(
+                                op, reg, self.scopeStack[-1].lower()))
+                        self.handle_jmp(codeline)
+                        self.symbol_register.clear()
+                        self.allocReg.unused_register = unused_register_list.copy()
+                    else:
+                        self.handle_jmp(codeline)
                 elif operation == 'LABEL':
                     self.handle_label(codeline)
                 elif operation == 'CALL':
@@ -387,13 +396,13 @@ class CodeGen():
                 elif operation == 'STOREREF':
                     self.handle_storeref(codeline)
 
-            print(self.symbol_register)
-            for op in self.symbol_register:
-                reg = self.symbol_register[op]
-                self.asmcode.append(self.store_mem(
-                    op, reg, self.scopeStack[-1].lower()))
-            self.symbol_register.clear()
-            self.allocReg.unused_register = unused_register_list.copy()
+            if block_code[-1][1] not in ['JMP', 'BNE', 'BEQ']:
+                for op in self.symbol_register:
+                    reg = self.symbol_register[op]
+                    self.asmcode.append(self.store_mem(
+                        op, reg, self.scopeStack[-1].lower()))
+                self.symbol_register.clear()
+                self.allocReg.unused_register = unused_register_list.copy()
 
     def display_asm(self):
         for line in self.asmcode:
