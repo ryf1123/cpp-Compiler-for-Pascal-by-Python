@@ -52,6 +52,7 @@ class AllocteRegister():
             elif code_line[1].lower() in ['call', 'return'] and i != len(self.code)-1:
                 block_part.append(self.code[i+1][0])
 
+        print(block_part)
         block_part = list(set(block_part))
         block_part.sort()
 
@@ -166,10 +167,11 @@ class AllocteRegister():
         return max_sym
 
     def load_mem(self, op, reg, scope):
-        return "lw {}, {}($fp)".format(reg, -self.symtable[scope].get(op.name).offset)
+        print("!!!!!", op)
+        return "lw {}, {}($fp)".format(reg, -op.offset)
 
     def store_mem(self, op, reg, scope):
-        return "sw {}, {}($fp)".format(reg, -self.symtable[scope].get(op.name).offset)
+        return "sw {}, {}($fp)".format(reg, -op.offset)
 
     def getReg(self, op, block_index, line_num, scope):
         '''
@@ -203,6 +205,7 @@ class AllocteRegister():
             self.symbol_register[op] = reg
 
             # print(self.symbol_register)
+            print(op)
             asmcode.append(self.load_mem(op, reg, scope))
 
         else:
@@ -212,6 +215,7 @@ class AllocteRegister():
             del self.symbol_register[var]
 
             self.symbol_register[op] = reg
+            print(op)
             asmcode.append(self.load_mem(op, reg, scope))
 
         # print("+++++")
