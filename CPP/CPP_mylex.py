@@ -1,7 +1,6 @@
 # -*- coding: UTF-8 -*-
 # 编译原理大作业 SPL based on Python
 # 任宇凡 刘洪甫 邱兆林
-
 # This file is the lex parse part of the whole project
 
 import ply.lex as lex
@@ -87,13 +86,11 @@ class lexer:
     t_SEMI = r'\;'
     t_CHAR = r'(\'([^\\\'\.]?)\')|(\"([^\\\"\.]?)\")'
 
-    # 系统函数还未实现
     def t_NAME(self, t):
         r'[A-Za-z](_?[A-Za-z0-9])*'  # (\.[A-Za-z](_?[A-Za-z0-9])*)?'
         t.type = reserved.get(t.value.lower(), 'NAME')
         return t
-
-    # 先这样重复着写
+        
     def t_ID(self, t):
         r'[A-Za-z](_?[A-Za-z0-9])*'  # (\.[A-Za-z](_?[A-Za-z0-9])*)?'
         t.type = reserved.get(t.value.lower(), 'ID')
