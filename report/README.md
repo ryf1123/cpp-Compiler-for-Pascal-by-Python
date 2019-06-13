@@ -6,6 +6,10 @@
 | ------ | ------ | ---------- |
 |        |        | 3160104704 |
 
+[TOC]
+
+
+
 ## 总体架构
 
 ![image-20190613194718564](assets/image-20190613194718564.png)
@@ -140,9 +144,100 @@ Result : <Node @ 0x10a5d3b00> (<tree_visual.Node object at 0x10a5d3b00>)
 
 ## 抽象语法树的生成
 
-抽象语法树的生成过程应该是在语法分析的过程中完成的。
+抽象语法树的生成过程应该是在语法分析的过程中完成的，而在我们的代码实现中确实也是这样的。
+
+由于在语法分析的过程中我们可以对产生式定义相应的动作，所以在这个过程中我们也完成了将抽象语法树的儿子节点添加到父节点的工作。这个过程中我们需要使用到节点的定义。和节点的函数。这部分的代码在`tree_visual.py`中。
+
+#### Node定义
+
+```python
+class Node(object):
+    def __init__(self, t, c):
+        self.type = t
+        self.children = c
+        self.id = "%s: %08d" % (
+            self.type, round(random.random() * 100000000))
+```
+
+Node定义中有三个成员
+
+- type：表示类型，Node的类型有很多中种，一般是直接采用产生式的左端，比如说`if_stmt`这样的。这个type将会作为名字的一部分绘制到结点中。
+- Children：一个存放儿子节点的列表。在children中放置各种不同的儿子节点。
+- id：id中存放的是type加上一个随机数。这样做的目的是为了克服在绘制抽象语法树的过程中由于名字重复而绘制混乱的问题。
+
+例如在下面的代码中我们将一句if语句的儿子全部添加到父亲节点中
+
+```python
+def p_if_stmt_with_else(p):
+    '''if_stmt :  IF  expression  THEN  if_label1  stmt  if_label2  ELSE  stmt  if_label3'''
+    #     0       1       2        3        4       5       6        7     8        9
+    p[0] = Node("if_stmt", [p[2], p[5], p[8]])
+```
+
+又比如下面的一行对`goto`语句的产生式，我们将跳转到的行号写在父亲结点里面
+
+```python
+def p_goto_stmt(p):
+    '''goto_stmt :  GOTO  INTEGER'''
+    p[0] = Node("goto_stmt", [p[2]])
+```
+
+在具体的绘制过程中我们需要对抽象语法树进行一次变量，然后将每一条边添加到我们即将绘制的图片中，最后将图片输出。
+
+### pydot库
+
+pydot是一个Python的绘图库，通过这个库我们可以比较方便地完成抽象语法树的绘制工作。
+
+![image-20190613204607987](assets/image-20190613204607987.png)
+
+### 测试抽象语法树的绘制
+
+比如说对于`cases.pas`的例子，它的代码如下
+
+```pascal
+PROGRAM Greeting;
+
+CONST
+x = 4;
+
+var y : integer;
+   
+BEGIN
+
+   CASE x OF
+    1: y := x + 1;
+    2: y := x + 2;
+    3: y := x + 3;
+    END;
+    BEGIN
+        y := x + 5;
+    END;
+
+   WRITELN(y);
+END.
+```
+
+绘制出来的抽象语法树如图所示
+
+![image-20190613210226722](assets/image-20190613210226722.png)
 
 
+
+当我们关注其中的case语句的时候，可以将图片放大
+
+```pascal
+   CASE x OF
+    1: y := x + 1;
+    2: y := x + 2;
+    3: y := x + 3;
+    END;
+```
+
+其对应的部分是，
+
+![image-20190613210317416](assets/image-20190613210317416.png)
+
+可以看出最左边的是case语句的`x`，而后面的每一条分支，其中的第一个分支是1，2，3，这分别是`case`中的几种选择情况。而后面具体的表达式应该是`x+1`等。这符合了我们的预期。
 
 ## 语义分析(这个如果没有的话就写一下类型检查吧)
 
