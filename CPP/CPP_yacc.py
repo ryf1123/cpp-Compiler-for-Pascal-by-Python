@@ -362,6 +362,10 @@ def p_procedure_head(p):
     for name, type, reference in p[3].list:
         table.define(name, type, reference=reference)
 
+    table.scope().return_type = None
+    table.get_identifier(p[2].name).type = None
+    table.get_identifier(p[2].name).params = p[3].list
+
     emit("LABEL", p[2].name, table.scope().name)
 
 
@@ -1018,7 +1022,13 @@ def p_factor_name(p):
     '''factor :  NAME'''
     p[0] = Node('factor', [p[1]])
 
-    p[0].symbol = table.get_identifier(p[1])
+    symbol = table.get_identifier(p[1])
+
+    if symbol.var_function == 'function':
+        if table.scope().name.endswith('.' + symbol.name):
+            symbol = table.get_identifier('_return')
+    
+    p[0].symbol = symbol
 
 
 def p_factor_const(p):

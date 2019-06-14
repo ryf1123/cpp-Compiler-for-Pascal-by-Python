@@ -46,7 +46,6 @@ class CodeGen():
         return out
 
     def handle_binary(self, codeline):
-        self.asmcode.append('\n# handle_binary')
 
         line_num, operation, lhs, op1, op2 = codeline
         block_index = self.allocReg.line_block(line_num)
@@ -113,7 +112,7 @@ class CodeGen():
             self.asmcode.append('not {}, {}'.format(reg_lhs, reg_op1))
 
     def handle_input(self, codeline):
-        self.asmcode.append('\n# handle_input')
+
         line_num, operation, lhs, op1, op2 = codeline
         block_index = self.allocReg.line_block(line_num)
         reg_lhs = self.handle_term(lhs, block_index, line_num)
@@ -124,7 +123,6 @@ class CodeGen():
         self.asmcode.append('addi {}, $v0, 0'.format(reg_lhs))
 
     def handle_print(self, codeline):
-        self.asmcode.append('\n# handle_print')
 
         line_num, operation, lhs, op1, op2 = codeline
         block_index = self.allocReg.line_block(line_num)
@@ -150,7 +148,6 @@ class CodeGen():
             self.asmcode.append('syscall')
 
     def handle_cmp(self, codeline):
-        self.asmcode.append('\n# handle_cmp')
 
         line_num, operation, lhs, op1, op2 = codeline
         block_index = self.allocReg.line_block(line_num)
@@ -174,7 +171,6 @@ class CodeGen():
                 op32_dict[operation], reg_lhs, reg_op1, reg_op2))
 
     def handle_jmp(self, codeline):
-        self.asmcode.append('\n# handle_jmp')
 
         line_num, operation, lhs, op1, op2 = codeline
         block_index = self.allocReg.line_block(line_num)
@@ -206,7 +202,7 @@ class CodeGen():
                     operation.lower(), reg_op1, reg_op2, reg_lhs))
 
     def handle_label(self, codeline):
-        self.asmcode.append('\n# handle_label')
+
         print("[*** This line]: ", codeline)
         # TODO: 保存ra，保存所有寄存器（临时寄存器和s寄存器）
 
@@ -245,7 +241,6 @@ class CodeGen():
 
         self.paraCounter = 0
 
-        self.asmcode.append('\n# handle_call')
         # TODO: 访问链：判断两个scope之间的关系
         self.scopeStack[-1]
         print("****")
@@ -301,7 +296,7 @@ class CodeGen():
 
     def handle_params(self, codeline):
         print("[This line]: ", codeline)
-        self.asmcode.append('\n# handle_params')
+
         # TODO: 只支持传基础类型
         # if codeline
         line_num, _, _, op1, _ = codeline
@@ -321,7 +316,7 @@ class CodeGen():
 
     def handle_refers(self, codeline):
         print("[This line]: ", codeline)
-        self.asmcode.append('\n# handle_refers')
+
         # TODO: 只支持传基础类型
         # if codeline
         line_num, _, _, op1, _ = codeline
@@ -345,7 +340,7 @@ class CodeGen():
         self.paraCounter += 1
 
     def handle_return(self, codeline):
-        self.asmcode.append('\n# handle_return')
+
         line_num, _, lhs, _, _ = codeline
 
         print("[This line]: ", codeline)
@@ -405,6 +400,8 @@ class CodeGen():
             block_code = self.code[start:end+1]
 
             for codeline in block_code:
+                self.asmcode.append('\n# %s' % ' '.join(str(code)
+                                                        for code in codeline))
                 line_num, operation, lhs, op1, op2 = codeline
                 if hasattr(lhs, 'reference') and lhs.reference or \
                         hasattr(op1, 'reference') and op1.reference or \
