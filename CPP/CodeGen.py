@@ -27,6 +27,8 @@ class CodeGen():
         self.asmcode.append('syscall')
         self.display_asm()
 
+        self.write_code()
+
     def handle_term(self, op, block_index, line_num):
 
         out = None
@@ -135,7 +137,7 @@ class CodeGen():
 
         if type(op1) == Symbol:
             reg_op1 = self.handle_term(op1, block_index, line_num)
-            print(op1, reg_op1)
+
             # TODO 只考虑输出整数
             self.asmcode.append('li $v0, 1')
             self.asmcode.append('addi $a0, {}, 0'.format(reg_op1))
@@ -175,7 +177,6 @@ class CodeGen():
         line_num, operation, lhs, op1, op2 = codeline
         block_index = self.allocReg.line_block(line_num)
 
-        print(lhs, op1, op2)
         reg_op1 = self.handle_term(op1, block_index, line_num)
         reg_op2 = self.handle_term(op2, block_index, line_num)
         reg_lhs = self.handle_term(lhs, block_index, line_num)
@@ -394,7 +395,6 @@ class CodeGen():
         pass
 
     def tacToasm(self):
-        print(self.allocReg.basic_blocks)
         for i in range(len(self.allocReg.basic_blocks)):
             start, end = self.allocReg.basic_blocks[i]
             block_code = self.code[start:end+1]
@@ -458,3 +458,8 @@ class CodeGen():
     def display_asm(self):
         for line in self.asmcode:
             print(line)
+
+    def write_code(self):
+        f = open("result.asm", 'w')
+        for line in self.asmcode:
+            f.write(line+'\n')

@@ -17,15 +17,8 @@ class AllocteRegister():
         self.block_label = {}
         # {(startline, endline): label_name}
 
-        # 寄存器 存了哪些symbol
-        # self.register_symbol = {}
-
         # symbol 被存在哪些寄存器里
         self.symbol_register = {}
-
-        # initialization
-        # for reg in self.unused_register:
-        #     self.register_symbol[reg] = ''
 
     def get_basic_block(self):
         '''
@@ -52,7 +45,6 @@ class AllocteRegister():
             elif code_line[1].lower() in ['call', 'return'] and i != len(self.code)-1:
                 block_part.append(self.code[i+1][0])
 
-        print(block_part)
         block_part = list(set(block_part))
         block_part.sort()
 
@@ -62,7 +54,7 @@ class AllocteRegister():
             else:
                 self.basic_blocks.append((block_part[i], self.code[-1][0]))
 
-        print(self.basic_blocks)
+        # print(self.basic_blocks)
 
     def block2label(self):
         '''
@@ -133,16 +125,9 @@ class AllocteRegister():
             op1 = code_line[3]
             op2 = code_line[4]
 
-            if lhs in self.symbols:
-                line[lhs] = float("inf")
-            if op1 in self.symbols:
-                line[op1] = code_line[0]
-            if op2 in self.symbols:
-                line[op2] = code_line[0]
-
-            # for sym in self.symbols:
-            #     if sym not in code_line:
-            #         line[sym] = preline[sym]
+            line[lhs] = float("inf")
+            line[op1] = code_line[0]
+            line[op2] = code_line[0]
 
             self.next_use[block_index].append(line)
             preline = line.copy()
@@ -150,7 +135,7 @@ class AllocteRegister():
         self.next_use[block_index] = list(reversed(self.next_use[block_index]))
         # print(self.next_use[block_index])
 
-    def get_block_maxuse(self, block_index, line_num):
+    def get_block_maxuse(self, op, block_index, line_num):
         '''
             return the symbol with maximum value of next use
         '''
@@ -159,7 +144,7 @@ class AllocteRegister():
         max_use = 0
         max_sym = ''
 
-        for sym in self.symbols:
+        for sym in next_use_block.keys():
             if self.symbol_register[sym] != '' and float(next_use_block[sym]) > max_use:
                 max_use = float(next_use_block[sym])
                 max_sym = sym
@@ -232,22 +217,16 @@ class AllocteRegister():
             self.unused_register.remove(reg)
             self.symbol_register[op] = reg
 
-            # print(self.symbol_register)
-            print(op)
             asmcode.append(self.load_mem(op, reg, scope_stack))
 
         else:
-            var = self.get_block_maxuse(block_index, line_num)
+            var = self.get_block_maxuse(op, block_index, line_num)
             reg = self.symbol_register[var]
             asmcode.append(self.store_mem(var, reg, scope_stack))
             del self.symbol_register[var]
 
             self.symbol_register[op] = reg
-            print(op)
-            asmcode.append(self.load_mem(op, reg, scope_stack))
 
-        # print("+++++")
-        # for op in self.symbol_register:
-        #     print(op, self.symbol_register[op])
+            asmcode.append(self.load_mem(op, reg, scope_stack))
 
         return reg, asmcode
