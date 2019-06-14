@@ -34,7 +34,6 @@ class CodeGen():
             out, code = self.allocReg.getReg(
                 op, block_index, line_num, self.scopeStack)
             self.asmcode += code
-
         elif type(op) == int:
             out = op
         elif type(op) == str:
@@ -330,10 +329,16 @@ class CodeGen():
         reg_op1 = self.handle_term(op1, block_index, line_num)
 
         if op1.reference:
-            self.asmcode.append('sw %s, -%d($sp)' %
-                                (reg_op1, 76 + self.paraCounter * 4))
+            self.asmcode.append(
+                '\n# pass value because it is an address already. ')
+
+            self.asmcode.append('lw $t9, {}($fp)'.format(-op1.offset))
+            self.asmcode.append('sw $t9, -%d($sp)' %
+                                (76 + self.paraCounter * 4))
         else:
-            self.asmcode.append("addi $t8, $fp, %d" % (76 + op1.offset))
+            self.asmcode.append(
+                '\n# pass address.')
+            self.asmcode.append("addi $t8, $fp, %d" % (op1.offset))
             self.asmcode.append('sw $t8, -%d($sp)' %
                                 (76 + self.paraCounter * 4))
 
@@ -400,7 +405,17 @@ class CodeGen():
             block_code = self.code[start:end+1]
 
             for codeline in block_code:
-                operation = codeline[1]
+                line_num, operation, lhs, op1, op2 = codeline
+                if hasattr(lhs, 'reference') and lhs.reference or \
+                        hasattr(op1, 'reference') and op1.reference or \
+                        hasattr(op2, 'reference') and op2.reference:
+                    for op in self.symbol_register:
+                        reg = self.symbol_register[op]
+                        self.asmcode.append(
+                            self.store_mem(op, reg, self.scopeStack))
+                    self.symbol_register.clear()
+                    self.allocReg.unused_register = unused_register_list.copy()
+
                 if operation in binary_list:
                     self.handle_binary(codeline)
                 elif operation in ['>', '<', '>=', '<=', '=']:

@@ -182,20 +182,24 @@ class AllocteRegister():
                     pass
 
     def load_mem(self, op, reg, scope_stack):
-        off, code = self.offset(op, scope_stack)
-
-        if code is None:
-            return "lw {}, {}($fp)".format(reg, -off)
+        if not op.reference:
+            off, code = self.offset(op, scope_stack)
+            if code is None:
+                return "lw {}, {}($fp)".format(reg, -off)
+            else:
+                return '\n'.join(code + ["lw {}, {}($t9)".format(reg, -off)])
         else:
-            return '\n'.join(code + ["lw {}, {}($t9)".format(reg, -off)])
+            return "lw $t9, {}($fp) \nlw {}, 0($t9)".format(-op.offset, reg)
 
     def store_mem(self, op, reg, scope_stack):
-        off, code = self.offset(op, scope_stack)
-
-        if code is None:
-            return "sw {}, {}($fp)".format(reg, -off)
+        if not op.reference:
+            off, code = self.offset(op, scope_stack)
+            if code is None:
+                return "sw {}, {}($fp)".format(reg, -off)
+            else:
+                return '\n'.join(code + ["sw {}, {}($t9)".format(reg, -off)])
         else:
-            return '\n'.join(code + ["sw {}, {}($t9)".format(reg, -off)])
+            return "lw $t9, {}($fp) \nsw {}, 0($t9)".format(-op.offset, reg)
 
     def getReg(self, op, block_index, line_num, scope_stack):
         '''

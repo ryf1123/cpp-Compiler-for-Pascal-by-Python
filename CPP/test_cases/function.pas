@@ -1,28 +1,19 @@
 program test3; 
 var 
-	A : integer; 
+	A,B : integer; 
 
-	procedure ScopeInner; 
-	var A : integer; 
-		begin
-		A := 10; 
-		writeln(A) ;
-	end; 
-
-	function Summation(num : integer) : integer;
+	function g(var x: integer): integer;
 	begin
-		if num = 1 then 
-			Summation := 1 
-		else 
-			Summation := 2;
-			ScopeInner;
+		x := 4;
+	end;
+
+	function f(var x : integer): integer;
+	begin
+		f := g(x);
 	end; 
 
 begin 
-	read(A);
-	A := 20000; 
-	writeln(A + 1 * 2); 
-	ScopeInner;
-	A := A + Summation(10);
-	writeln(A); 
+	A := 5;
+	B := f(A);
+	writeln(A);
 end.
