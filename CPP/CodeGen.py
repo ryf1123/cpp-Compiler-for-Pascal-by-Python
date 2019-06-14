@@ -333,7 +333,7 @@ class CodeGen():
         else:
             self.asmcode.append(
                 '\n# pass address.')
-            self.asmcode.append("addi $t8, $fp, %d" % (op1.offset))
+            self.asmcode.append("addi $t8, $fp, %d" % (-op1.offset))
             self.asmcode.append('sw $t8, -%d($sp)' %
                                 (76 + self.paraCounter * 4))
 
