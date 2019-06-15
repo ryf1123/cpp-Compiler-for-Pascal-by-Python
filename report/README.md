@@ -259,6 +259,121 @@ END.
 
 可以看出最左边的是case语句的`x`，而后面的每一条分支，其中的第一个分支是1，2，3，这分别是`case`中的几种选择情况。而后面具体的表达式应该是`x+1`等。这符合了我们的预期。
 
+## 语义分析(这个如果没有的话就写一下类型检查吧)
+
+### 语义信息的定义
+
+在构建语法树的同时，在节点中可以定义传递语义的信息。比如下面的一段定义了常量值与类型的语义。
+
+```python
+def p_const_value(p):
+    '''const_value :  INTEGER  |  REAL  |  CHAR
+                   |  SYS_CON  |  true  | false
+    '''
+    p[0] = Node("const_value", p[1])
+
+    p[0].value = p[1]
+
+    if type(p[1]) == int:
+        p[0].type = 'integer'
+
+    elif type(p[1]) == float:
+        p[0].type = 'real'
+
+    elif type(p[1]) == str:
+        p[0].type = 'char'
+
+    if str(p[1]).lower() == 'true':
+        p[0].type = 'boolean'
+        p[0].value = True
+
+    if str(p[1]).lower() == 'false':
+        p[0].type = 'boolean'
+        p[0].value = False
+```
+
+在这段分析中，`p[0]` 表示该节点，通过对其属性 type 和 value 复制来定义它的语义。
+
+### 语义信息的传递
+
+在自底向上的分析过程中，当子节点的语义被定义后，父节点就可以访问子节点的语义信息。例如下面一段保存一个 name 的 list。
+
+```python
+def p_name_list(p):
+    '''name_list :  name_list  COMMA  NAME
+                 |  NAME'''
+    if len(p) == 4:
+        p[0] = Node("name_list", [p[1]])
+        p[0].list = p[1].list + [p[3]]
+    else:
+        p[0] = Node("name_list", [p[1]])
+        p[0].list = [p[1]]
+```
+
+符号定义后，对应的符号类的对象也会被定义在语义信息中，随着节点传递。
+
+```python
+def p_factor_name(p):
+    '''factor :  NAME'''
+    p[0] = Node('factor', [p[1]])
+
+    symbol = table.get_identifier(p[1])
+
+    if symbol.var_function == 'function':
+        if table.scope().name.endswith('.' + symbol.name):
+            symbol = table.get_identifier('_return')
+
+    p[0].symbol = symbol
+```
+
+### 类型检查
+
+符号的类型随着符号保存在节点中。类型检查需要时，只需要检查对应的类型即可。让类型不匹配时，抛出一个异常。
+
+```python
+def p_term(p):
+    '''term :  term  MUL  factor
+                |  term  DIV  factor
+                |  term  MOD  factor
+                |  term  AND  factor
+                |  factor'''
+    if len(p) == 2:
+        p[0] = Node("term-factor", [p[1]])
+
+        if hasattr(p[1], 'symbol'):
+            p[0].symbol = p[1].symbol
+        else:
+            p[0].value = p[1].value
+            p[0].type = p[1].type
+
+    else:
+        p[0] = Node("term-term", [p[1], p[3]])
+
+        if p[2] == '*':
+            if type_of_node(p[1]) == 'real' or type_of_node(p[3]) == 'real':
+                symbol = table.get_temp('real')
+            else:
+                symbol = table.get_temp('integer')
+
+        elif p[2] == '/':
+            symbol = table.get_temp('real')
+
+        elif p[2].lower() in ['div', 'mod']:
+            if type_of_node(p[1]) != 'integer':
+                raise ValueError('Type mismatch: %s' % type_of_node(p[1]))
+            if type_of_node(p[3]) != 'integer':
+                raise ValueError('Type mismatch: %s' % type_of_node(p[3]))
+            symbol = table.get_temp('integer')
+
+        elif p[2].lower() == 'and':
+            symbol = table.get_temp('boolean')
+
+        emit(p[2], symbol, p[1], p[3])
+        p[0].symbol = symbol
+```
+
+这段表示了乘法、除法、以及取模运算上的类型检查。当类型不是 integer 时会抛出异常。
+
 ## 符号表
 
 符号表在生成抽象语法树的过程中建立。符号表的总体结构如下图所示。
