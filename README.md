@@ -1,5 +1,7 @@
 # CPP: Compiler for Pascal by Python
 
+> I would like to deliever heartfelt thanks for every contributor of our team.:clap::clap::clap: It is by our joint effors that we are bringing what was originally impossible into reality. Good luck to your finals. Keep calm and carry on.😎
+
 ![CPP-logo](assets/CPP-logo.jpg)
 
 ## To Do
