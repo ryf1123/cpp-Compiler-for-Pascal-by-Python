@@ -25,7 +25,6 @@ if __name__ == '__main__':
         codegen = CodeGen.CodeGen(scopes, tac, allocReg)
 
         print("[info] code generation done")
-        print("--------- This is the end of this program ---------")
-
+        print("---------         This is the end of this program       ---------")
     else:
         print("[error] error in paramater's number")

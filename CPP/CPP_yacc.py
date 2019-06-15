@@ -11,6 +11,7 @@ from tree_visual import Node
 import ThreeAC
 import AllocateRegister
 import CodeGen
+from error_handler import SemanticLogger 
 
 
 precedence = (
@@ -104,6 +105,9 @@ def p_const_expr_list(p):
     elif len(p) == 2:
         p[0] = Node("const_expr_list", [p[1]])
 
+# def p_const_expr_error(p):
+#     'const_expr :  error  SEMICON'
+# SemanticLogger.info(f"Syntax error at token `{p[1].type}`in const expression.")
 
 def p_const_expr(p):
     """const_expr : NAME EQUAL const_value SEMI"""
