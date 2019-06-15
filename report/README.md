@@ -502,6 +502,34 @@ else:
 
 在上面的代码中，由于我们在中间代码的时候已经将参数传递的每一个参数都转化为了一行中间代码。所以这里我们只需要压入一个参数。而不需要将所有的参数都压入。
 
+### 引用传递
+
+
+
+```python
+line_num, _, _, op1, _ = codeline
+block_index = self.allocReg.line_block(line_num)
+reg_op1 = self.handle_term(op1, block_index, line_num)
+
+if op1.reference:
+  self.asmcode.append(
+  '\n# pass value because it is an address already. ')
+
+  self.asmcode.append('lw $t9, {}($fp)'.format(-op1.offset))
+  self.asmcode.append('sw $t9, -%d($sp)' %
+  (76 + self.paraCounter * 4))
+else:
+  self.asmcode.append(
+  '\n# pass address.')
+  self.asmcode.append("addi $t8, $fp, %d" % (-op1.offset))
+  self.asmcode.append('sw $t8, -%d($sp)' %
+  (76 + self.paraCounter * 4))
+
+self.paraCounter += 1
+```
+
+
+
 ### 寄存器分配
 
 
