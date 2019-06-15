@@ -482,9 +482,25 @@ reg_lhs = self.handle_term(codeline[2], block_index, codeline[0])
 self.asmcode.append("move, {}, $v0".format(reg_lhs))
 ```
 
+### 参数传递
 
+函数调用过程中的参数传递需要考虑到参数的个数超过默认可用的寄存器`a0,a1,a3`，这种时候我们就需要将参数压入栈中，并且告知被调函数参数存放的位置。这个告知的过程是通过寄存器分配完成的。
 
+```python
+line_num, _, _, op1, _ = codeline
+block_index = self.allocReg.line_block(line_num)
+reg_op1 = self.handle_term(op1, block_index, line_num)
 
+const_type = [int, str, bool]
+if type(op1) in const_type:
+  self.asmcode.append('li $t8, %d' % reg_op1)
+  self.asmcode.append('sw $t8, -%d($sp)' % (76 + self.paraCounter*4))
+else:
+  self.asmcode.append('sw %s, -%d($sp)' %
+  (reg_op1, 76 + self.paraCounter*4))
+```
+
+在上面的代码中，由于我们在中间代码的时候已经将参数传递的每一个参数都转化为了一行中间代码。所以这里我们只需要压入一个参数。而不需要将所有的参数都压入。
 
 ### 寄存器分配
 
