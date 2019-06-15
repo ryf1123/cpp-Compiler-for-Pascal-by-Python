@@ -885,6 +885,57 @@ self.paraCounter += 1
 
 
 
+
+
+## 错误处理
+
+### 语法错误
+
+当语法错误发生时，yacc 会把节点转化为一个 p_error 节点。在 p_error 的处理中抛出一个异常，就可以当语法错误发生时将信息显示出来，并中断程序。
+
+```python
+def p_error(p):
+    raise ValueError("Syntax Error")
+```
+
+![image-20190615230826784](assets/image-20190615230826784.png)
+
+### 语义错误
+
+本编译器支持检查类型、以及对非变量的名字赋值的语义错误。
+
+类型检查的例子如下：
+
+```pascal
+program hello;
+var 
+    x, y: real;
+
+begin
+    x := x mod y;
+end.
+```
+
+该例子尝试对浮点数取模运算。编译器会给出以下提示。
+
+![image-20190615231256257](assets/image-20190615231256257.png)
+
+另一个例子是尝试对 const 等赋值。
+
+```pascal
+program hello;
+const 
+    x = 2;
+
+begin
+    x := 3;
+end.
+```
+
+编译器会给出以下提示。
+
+![image-20190615231456097](assets/image-20190615231456097.png)
+
 ## 测试
 
 ### 测试1：test2.spl
