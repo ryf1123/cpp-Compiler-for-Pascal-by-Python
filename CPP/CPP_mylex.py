@@ -51,16 +51,11 @@ tokens = [
     'SEMI'
 ] + list(reserved.values())
 
-# print(tokens)
-# print()
-# print(reserved)
-
 
 class lexer:
     tokens = tokens
     # 简单token的正则表达式
     # 第一列
-    # t_REAL          = r'\d+\.\d+'
     t_LP = r'\('
     t_RP = r'\)'
     t_LB = r'\['
@@ -71,7 +66,6 @@ class lexer:
     t_MUL = r'\*'
     t_DIV = r'\/'
     t_UNEQUAL = r'\<\>'
-    # t_OPERATOR_NOT  = 'NOT'  # 其实应该是和Keyword的not不同的，所以不会重复
     # 第二列
     t_PLUS = r'\+'
     t_MINUS = r'\-'
@@ -100,17 +94,12 @@ class lexer:
         r'\d+\.\d+'
         t.value = float(t.value)
         return t
-    # t_REAL          = r'\d+\.\d+'
-    # def t_NUMBER(self, t):
 
     def t_INTEGER(self, t):
         r'[-]?[0-9]*[0-9]+'
         t.value = int(t.value)
         return t
 
-    # def t_CHAR(self, t):
-    #     t.value = t.value[1:-1]
-    #     return t
 
     def t_error(self, t):
         print("[  Illegal character  ] '%s'" % t.value[0])
@@ -128,24 +117,15 @@ class lexer:
     def test(self, data):
 
         self.lexer.input(data)
-        # while True:
-        #      tok = lexer.token()
-        #      if not tok: break
-        #      print tok
-        # 上面一种写法的简写
         for tok in self.lexer:
             print(tok)
 
 
 lexer = lexer()
 lexer.build()
-#lexer = lex.lex()
 
 if __name__ == '__main__':
     m = lexer
-    # m.build()
-    #m.test(" + ")
-    # print("\n\n\nBegins~")
     if len(sys.argv) > 1:
         f = open(sys.argv[1], "r")
         data = f.read()

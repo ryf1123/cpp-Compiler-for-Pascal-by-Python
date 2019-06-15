@@ -52,8 +52,6 @@ def type_of_node(node):
 
 
 def p_program(p):
-    # '''program :  program_head  routine  DOT
-    #            | factor '''
     '''program :  program_head  routine  DOT '''
     p[0] = Node("program", [p[1], p[2]])
 
@@ -1075,6 +1073,7 @@ def p_error(p):
     print("Syntax error")
 
 
+# for testing
 if __name__ == '__main__':
     parser = yacc.yacc()
     if len(sys.argv) > 1:
