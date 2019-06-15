@@ -1,28 +1,24 @@
-# 0 LABEL go main.go None
-# 1 > Symbol(`_t000000`, boolean, var, 20) Symbol(`a`, integer, var, 4) 0
-# 2 BEQ _l000000 Symbol(`_t000000`, boolean, var, 20) False
-# 3 - Symbol(`_t000001`, integer, var, 24) Symbol(`a`, integer, var, 4) 1
-# 4 REFER None Symbol(`b`, integer, var, 0, *) None
-# 5 PARAM None Symbol(`_t000001`, integer, var, 24) None
-# 6 CALL Symbol(`_t000002`, integer, var, 28) go main
-# 7 * Symbol(`_t000003`, integer, var, 32) Symbol(`a`, integer, var, 4) Symbol(`_t000002`, integer, var, 28)
-# 8 + Symbol(`_return`, integer, var, 8, [('b', 'integer', True), ('a', 'integer', False)]) Symbol(`_t000003`, integer, var, 32) 0
-# 9 JMP _l000001 None None
-#10 LABEL _l000000 None None
-#11 + Symbol(`_return`, integer, var, 8, [('b', 'integer', True), ('a', 'integer', False)]) 1 0
-#12 LABEL _l000001 None None
-#13 + Symbol(`_t000004`, integer, var, 36) Symbol(`b`, integer, var, 0, *) Symbol(`_return`, integer, var, 8, [('b', 'integer', True), ('a', 'integer', False)])
-#14 + Symbol(`b`, integer, var, 0, *) Symbol(`_t000004`, integer, var, 36) 0
-#15 + Symbol(`_t000005`, integer, var, 40) Symbol(`k`, integer, var, 4) Symbol(`_return`, integer, var, 8, [('b', 'integer', True), ('a', 'integer', False)])
-#16 + Symbol(`k`, integer, var, 4) Symbol(`_t000005`, integer, var, 40) 0
-#17 RETURN Symbol(`_return`, integer, var, 8, [('b', 'integer', True), ('a', 'integer', False)]) main.go None
-#18 LABEL main None None
-#19 + Symbol(`k`, integer, var, 4) 0 0
-#20 REFER None Symbol(`k`, integer, var, 4) None
-#21 PARAM None 5 None
-#22 CALL Symbol(`_t000000`, integer, var, 8) go main
-#23 + Symbol(`f`, integer, var, 0) Symbol(`_t000000`, integer, var, 8) 0
-#24 PRINT None Symbol(`f`, integer, var, 0) None
-#25 PRINTLN None None None
-#26 PRINT None Symbol(`k`, integer, var, 4) None
-#27 PRINTLN None None None
+# 0 LABEL gcd main.gcd None
+# 1 = Symbol(`_t000000`, boolean, var, 12) Symbol(`b`, integer, var, 4) 0
+# 2 BEQ _l000000 Symbol(`_t000000`, boolean, var, 12) False
+# 3 + Symbol(`_return`, integer, var, 8, [('a', 'integer', False), ('b', 'integer', False)]) Symbol(`a`, integer, var, 0) 0
+# 4 JMP _l000001 None None
+# 5 LABEL _l000000 None None
+# 6 MOD Symbol(`_t000001`, integer, var, 16) Symbol(`a`, integer, var, 0) Symbol(`b`, integer, var, 4)
+# 7 PARAM None Symbol(`b`, integer, var, 4) None
+# 8 PARAM None Symbol(`_t000001`, integer, var, 16) None
+# 9 CALL Symbol(`_t000002`, integer, var, 20) gcd main
+#10 + Symbol(`_return`, integer, var, 8, [('a', 'integer', False), ('b', 'integer', False)]) Symbol(`_t000002`, integer, var, 20) 0
+#11 LABEL _l000001 None None
+#12 RETURN Symbol(`_return`, integer, var, 8, [('a', 'integer', False), ('b', 'integer', False)]) main.gcd None
+#13 LABEL main None None
+#14 PARAM None 12 None
+#15 PARAM None 144 None
+#16 CALL Symbol(`_t000000`, integer, var, 4) gcd main
+#17 PARAM None 5 None
+#18 PARAM None 7 None
+#19 CALL Symbol(`_t000001`, integer, var, 8) gcd main
+#20 * Symbol(`_t000002`, integer, var, 12) Symbol(`_t000000`, integer, var, 4) Symbol(`_t000001`, integer, var, 8)
+#21 + Symbol(`ans`, integer, var, 0) Symbol(`_t000002`, integer, var, 12) 0
+#22 PRINT None Symbol(`ans`, integer, var, 0) None
+#23 PRINTLN None None None

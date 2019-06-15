@@ -25,7 +25,7 @@ end
 ;
 
 begin
-	i := go(11);
+	i := go(12);
 	writeln(i);
 end
 .

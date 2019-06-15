@@ -1,12 +1,32 @@
 # Report 编译原理项目报告
 
-# CPP: Compile for Pascal by Python 
+## CPP: Compile for Pascal by Python 
+
+![æ¥çæºå¾å](assets/20090110120000-107839.jpg)
 
 | 邱兆林     | 刘洪甫 | 任宇凡     |
 | ---------- | ------ | ---------- |
 | 3160105287 | 3160104769 | 3160104704 |
 
+
+
+
+
+
+
+
+
+
+
+
+
+## 目录
+
 [TOC]
+
+
+
+
 
 
 
@@ -748,21 +768,950 @@ self.paraCounter += 1
 
 这里有一点需要注意的，为了防止同时出现引用传递和跨越scope直接访问导致两个寄存器对应到同一个实参，在引用传递中每次修改的时候都需要写回，而不是放在寄存器中。当然如果采用更好的实现方法，应该将这个变量和实参分配同一个寄存器。
 
-### 寄存器分配
 
 
 
 
 
-## 测试样例
 
+## 测试样例(缺少)
 
+### 测试1：test2.spl
 
+这段代码的功能是求斐波拉契数列。通过传递参数i给函数`go`，可以求得斐波拉契数列的第i项。
 
+而`go`函数递归调用自身，在每一次触发两个函数求解第i-1项和第i-2项斐波拉契数列值。而边界条件定义为第1项和第2项斐波拉契数列为1；
+
+##### 代码
+
+```pascal
+program hello;
+var
+	i : integer;
+
+function go(a : integer): integer;
+begin
+	if a = 1 then
+	begin
+		go := 1;
+	end
+	else
+	begin
+		if a = 2 then
+		begin
+			go := 1;
+		end
+		else
+		begin
+			go := go(a - 1) + go(a - 2);
+		end
+		;
+	end
+	;
+end
+;
+
+begin
+	i := go(11);
+	writeln(i);
+end
+.
+```
+
+##### 生成中间代码
+
+```
+# 0 LABEL go main.go None
+# 1 = Symbol(`_t000000`, boolean, var, 8) Symbol(`a`, integer, var, 0) 1
+# 2 BEQ _l000000 Symbol(`_t000000`, boolean, var, 8) False
+# 3 + Symbol(`_return`, integer, var, 4, [('a', 'integer', False)]) 1 0
+# 4 JMP _l000001 None None
+# 5 LABEL _l000000 None None
+# 6 = Symbol(`_t000001`, boolean, var, 12) Symbol(`a`, integer, var, 0) 2
+# 7 BEQ _l000002 Symbol(`_t000001`, boolean, var, 12) False
+# 8 + Symbol(`_return`, integer, var, 4, [('a', 'integer', False)]) 1 0
+# 9 JMP _l000003 None None
+#10 LABEL _l000002 None None
+#11 - Symbol(`_t000002`, integer, var, 16) Symbol(`a`, integer, var, 0) 1
+#12 PARAM None Symbol(`_t000002`, integer, var, 16) None
+#13 CALL Symbol(`_t000003`, integer, var, 20) go main
+#14 - Symbol(`_t000004`, integer, var, 24) Symbol(`a`, integer, var, 0) 2
+#15 PARAM None Symbol(`_t000004`, integer, var, 24) None
+#16 CALL Symbol(`_t000005`, integer, var, 28) go main
+#17 + Symbol(`_t000006`, integer, var, 32) Symbol(`_t000003`, integer, var, 20) Symbol(`_t000005`, integer, var, 28)
+#18 + Symbol(`_return`, integer, var, 4, [('a', 'integer', False)]) Symbol(`_t000006`, integer, var, 32) 0
+#19 LABEL _l000003 None None
+#20 LABEL _l000001 None None
+#21 RETURN Symbol(`_return`, integer, var, 4, [('a', 'integer', False)]) main.go None
+#22 LABEL main None None
+#23 PARAM None 11 None
+#24 CALL Symbol(`_t000000`, integer, var, 4) go main
+#25 + Symbol(`i`, integer, var, 0) Symbol(`_t000000`, integer, var, 4) 0
+#26 PRINT None Symbol(`i`, integer, var, 0) None
+#27 PRINTLN None None None
+```
+
+##### 目标代码
+
+```MIPS
+
+# 0 LABEL go main.go None
+go:
+
+# 1 = Symbol(`_t000000`, boolean, var, 8) Symbol(`a`, integer, var, 0) 1
+lw $t0, 0($fp)
+lw $t1, -8($fp)
+li $t8, 1
+seq $t1, $t0, $t8
+
+# 2 BEQ _l000000 Symbol(`_t000000`, boolean, var, 8) False
+sw $t0, 0($fp)
+sw $t1, -8($fp)
+li $t8, 0
+beq $t1, $t8, _l000000
+
+# 3 + Symbol(`_return`, integer, var, 4, [('a', 'integer', False)]) 1 0
+lw $t0, -4($fp)
+addi $t0, $0, 1
+
+# 4 JMP _l000001 None None
+sw $t0, -4($fp)
+j _l000001
+
+# 5 LABEL _l000000 None None
+_l000000:
+
+# 6 = Symbol(`_t000001`, boolean, var, 12) Symbol(`a`, integer, var, 0) 2
+lw $t0, 0($fp)
+lw $t1, -12($fp)
+li $t8, 2
+seq $t1, $t0, $t8
+
+# 7 BEQ _l000002 Symbol(`_t000001`, boolean, var, 12) False
+sw $t0, 0($fp)
+sw $t1, -12($fp)
+li $t8, 0
+beq $t1, $t8, _l000002
+
+# 8 + Symbol(`_return`, integer, var, 4, [('a', 'integer', False)]) 1 0
+lw $t0, -4($fp)
+addi $t0, $0, 1
+
+# 9 JMP _l000003 None None
+sw $t0, -4($fp)
+j _l000003
+
+# 10 LABEL _l000002 None None
+_l000002:
+
+# 11 - Symbol(`_t000002`, integer, var, 16) Symbol(`a`, integer, var, 0) 1
+lw $t0, 0($fp)
+lw $t1, -16($fp)
+li $t8, 1
+sub $t1, $t0, $t8
+
+# 12 PARAM None Symbol(`_t000002`, integer, var, 16) None
+sw $t1, -76($sp)
+
+# 13 CALL Symbol(`_t000003`, integer, var, 20) go main
+sw $t0, 0($fp)
+sw $t1, -16($fp)
+# = parent's
+lw $t8, 76($fp)
+sw $t8, 0($sp)
+sw $fp, -4($sp)
+sw $ra, -8($sp)
+sw $8, -12($sp)
+sw $9, -16($sp)
+sw $10, -20($sp)
+sw $11, -24($sp)
+sw $12, -28($sp)
+sw $13, -32($sp)
+sw $14, -36($sp)
+sw $15, -40($sp)
+sw $16, -44($sp)
+sw $17, -48($sp)
+sw $18, -52($sp)
+sw $19, -56($sp)
+sw $20, -60($sp)
+sw $21, -64($sp)
+sw $22, -68($sp)
+sw $23, -72($sp)
+addi $fp $sp -76
+addi $sp $sp -112
+jal go
+lw $t0, -20($fp)
+move, $t0, $v0
+sw $t0, -20($fp)
+
+# 14 - Symbol(`_t000004`, integer, var, 24) Symbol(`a`, integer, var, 0) 2
+lw $t0, 0($fp)
+lw $t1, -24($fp)
+li $t8, 2
+sub $t1, $t0, $t8
+
+# 15 PARAM None Symbol(`_t000004`, integer, var, 24) None
+sw $t1, -76($sp)
+
+# 16 CALL Symbol(`_t000005`, integer, var, 28) go main
+sw $t0, 0($fp)
+sw $t1, -24($fp)
+# = parent's
+lw $t8, 76($fp)
+sw $t8, 0($sp)
+sw $fp, -4($sp)
+sw $ra, -8($sp)
+sw $8, -12($sp)
+sw $9, -16($sp)
+sw $10, -20($sp)
+sw $11, -24($sp)
+sw $12, -28($sp)
+sw $13, -32($sp)
+sw $14, -36($sp)
+sw $15, -40($sp)
+sw $16, -44($sp)
+sw $17, -48($sp)
+sw $18, -52($sp)
+sw $19, -56($sp)
+sw $20, -60($sp)
+sw $21, -64($sp)
+sw $22, -68($sp)
+sw $23, -72($sp)
+addi $fp $sp -76
+addi $sp $sp -112
+jal go
+lw $t0, -28($fp)
+move, $t0, $v0
+sw $t0, -28($fp)
+
+# 17 + Symbol(`_t000006`, integer, var, 32) Symbol(`_t000003`, integer, var, 20) Symbol(`_t000005`, integer, var, 28)
+lw $t0, -20($fp)
+lw $t1, -28($fp)
+lw $t2, -32($fp)
+add $t2, $t0, $t1
+
+# 18 + Symbol(`_return`, integer, var, 4, [('a', 'integer', False)]) Symbol(`_t000006`, integer, var, 32) 0
+lw $t3, -4($fp)
+li $t8, 0
+add $t3, $t2, $t8
+sw $t0, -20($fp)
+sw $t1, -28($fp)
+sw $t2, -32($fp)
+sw $t3, -4($fp)
+
+# 19 LABEL _l000003 None None
+_l000003:
+
+# 20 LABEL _l000001 None None
+_l000001:
+
+# 21 RETURN Symbol(`_return`, integer, var, 4, [('a', 'integer', False)]) main.go None
+lw $v0, -4($fp)
+addi $sp, $sp, 112
+lw $fp, 72($fp)
+lw $8, -12($sp)
+lw $9, -16($sp)
+lw $10, -20($sp)
+lw $11, -24($sp)
+lw $12, -28($sp)
+lw $13, -32($sp)
+lw $14, -36($sp)
+lw $15, -40($sp)
+lw $16, -44($sp)
+lw $17, -48($sp)
+lw $18, -52($sp)
+lw $19, -56($sp)
+lw $20, -60($sp)
+lw $21, -64($sp)
+lw $22, -68($sp)
+lw $23, -72($sp)
+move $t8, $ra
+lw $ra, -8($sp)
+jr $t8
+
+# 22 LABEL main None None
+main:
+move $fp, $sp
+addi $sp, $sp, -8
+
+# 23 PARAM None 11 None
+li $t8, 11
+sw $t8, -76($sp)
+
+# 24 CALL Symbol(`_t000000`, integer, var, 4) go main
+# = fp
+sw $fp, 0($sp)
+sw $fp, -4($sp)
+sw $ra, -8($sp)
+sw $8, -12($sp)
+sw $9, -16($sp)
+sw $10, -20($sp)
+sw $11, -24($sp)
+sw $12, -28($sp)
+sw $13, -32($sp)
+sw $14, -36($sp)
+sw $15, -40($sp)
+sw $16, -44($sp)
+sw $17, -48($sp)
+sw $18, -52($sp)
+sw $19, -56($sp)
+sw $20, -60($sp)
+sw $21, -64($sp)
+sw $22, -68($sp)
+sw $23, -72($sp)
+addi $fp $sp -76
+addi $sp $sp -112
+jal go
+lw $t0, -4($fp)
+move, $t0, $v0
+sw $t0, -4($fp)
+
+# 25 + Symbol(`i`, integer, var, 0) Symbol(`_t000000`, integer, var, 4) 0
+lw $t0, -4($fp)
+lw $t1, 0($fp)
+li $t8, 0
+add $t1, $t0, $t8
+
+# 26 PRINT None Symbol(`i`, integer, var, 0) None
+li $v0, 1
+addi $a0, $t1, 0
+syscall
+
+# 27 PRINTLN None None None
+li $v0, 11
+addi $a0, $0, 10
+syscall
+sw $t0, -4($fp)
+sw $t1, 0($fp)
+li $v0, 10
+syscall
+```
+
+##### 模拟器测试
+
+![image-20190615221927213](assets/image-20190615221927213.png)
+
+第11项为89正确。
+
+![image-20190615222019048](assets/image-20190615222019048.png)
+
+第12项为144，正确(1,1,2,3,5,8,13,21,34,55,89,144)
+
+### 测试2：test4.spl
+
+测试案例4是一个引用传递加上递归调用的算阶乘的累加的例子。其中穿过scope访问当了k，并且传递的也是引用传递k。所以在每次`b := b + go;`和`k := k + go;`中都会加上自己。
+
+```pascal
+program hello;
+var	
+	f : integer;
+	k : integer;
+function go(var b : integer; a : integer): integer;
+var 
+	fk : integer;
+	t : real;
+begin
+	if a > 0 then 
+	begin
+		go := a * go(b , a - 1);
+	end
+	else
+	begin
+		go := 1;
+	end
+	;
+	b := b + go;
+	k := k + go;
+end
+;
+
+begin
+	k := 0;
+	f := go(k , 5);
+	writeln(f);
+	writeln(k);
+end
+.
+```
+
+##### 中间代码
+
+```
+# 0 LABEL go main.go None
+# 1 > Symbol(`_t000000`, boolean, var, 20) Symbol(`a`, integer, var, 4) 0
+# 2 BEQ _l000000 Symbol(`_t000000`, boolean, var, 20) False
+# 3 - Symbol(`_t000001`, integer, var, 24) Symbol(`a`, integer, var, 4) 1
+# 4 REFER None Symbol(`b`, integer, var, 0, *) None
+# 5 PARAM None Symbol(`_t000001`, integer, var, 24) None
+# 6 CALL Symbol(`_t000002`, integer, var, 28) go main
+# 7 * Symbol(`_t000003`, integer, var, 32) Symbol(`a`, integer, var, 4) Symbol(`_t000002`, integer, var, 28)
+# 8 + Symbol(`_return`, integer, var, 8, [('b', 'integer', True), ('a', 'integer', False)]) Symbol(`_t000003`, integer, var, 32) 0
+# 9 JMP _l000001 None None
+#10 LABEL _l000000 None None
+#11 + Symbol(`_return`, integer, var, 8, [('b', 'integer', True), ('a', 'integer', False)]) 1 0
+#12 LABEL _l000001 None None
+#13 + Symbol(`_t000004`, integer, var, 36) Symbol(`b`, integer, var, 0, *) Symbol(`_return`, integer, var, 8, [('b', 'integer', True), ('a', 'integer', False)])
+#14 + Symbol(`b`, integer, var, 0, *) Symbol(`_t000004`, integer, var, 36) 0
+#15 + Symbol(`_t000005`, integer, var, 40) Symbol(`k`, integer, var, 4) Symbol(`_return`, integer, var, 8, [('b', 'integer', True), ('a', 'integer', False)])
+#16 + Symbol(`k`, integer, var, 4) Symbol(`_t000005`, integer, var, 40) 0
+#17 RETURN Symbol(`_return`, integer, var, 8, [('b', 'integer', True), ('a', 'integer', False)]) main.go None
+#18 LABEL main None None
+#19 + Symbol(`k`, integer, var, 4) 0 0
+#20 REFER None Symbol(`k`, integer, var, 4) None
+#21 PARAM None 5 None
+#22 CALL Symbol(`_t000000`, integer, var, 8) go main
+#23 + Symbol(`f`, integer, var, 0) Symbol(`_t000000`, integer, var, 8) 0
+#24 PRINT None Symbol(`f`, integer, var, 0) None
+#25 PRINTLN None None None
+#26 PRINT None Symbol(`k`, integer, var, 4) None
+#27 PRINTLN None None None
+```
+
+##### 目标代码
+
+```
+
+# 0 LABEL go main.go None
+go:
+
+# 1 > Symbol(`_t000000`, boolean, var, 20) Symbol(`a`, integer, var, 4) 0
+lw $t0, -4($fp)
+lw $t1, -20($fp)
+li $t8, 0
+sgt $t1, $t0, $t8
+
+# 2 BEQ _l000000 Symbol(`_t000000`, boolean, var, 20) False
+sw $t0, -4($fp)
+sw $t1, -20($fp)
+li $t8, 0
+beq $t1, $t8, _l000000
+
+# 3 - Symbol(`_t000001`, integer, var, 24) Symbol(`a`, integer, var, 4) 1
+lw $t0, -4($fp)
+lw $t1, -24($fp)
+li $t8, 1
+sub $t1, $t0, $t8
+
+# 4 REFER None Symbol(`b`, integer, var, 0, *) None
+sw $t0, -4($fp)
+sw $t1, -24($fp)
+lw $t9, 0($fp) 
+lw $t0, 0($t9)
+
+# pass value because it is an address already. 
+lw $t9, 0($fp)
+sw $t9, -76($sp)
+lw $t9, 0($fp) 
+sw $t0, 0($t9)
+
+# 5 PARAM None Symbol(`_t000001`, integer, var, 24) None
+lw $t0, -24($fp)
+sw $t0, -80($sp)
+
+# 6 CALL Symbol(`_t000002`, integer, var, 28) go main
+sw $t0, -24($fp)
+# = parent's
+lw $t8, 76($fp)
+sw $t8, 0($sp)
+sw $fp, -4($sp)
+sw $ra, -8($sp)
+sw $8, -12($sp)
+sw $9, -16($sp)
+sw $10, -20($sp)
+sw $11, -24($sp)
+sw $12, -28($sp)
+sw $13, -32($sp)
+sw $14, -36($sp)
+sw $15, -40($sp)
+sw $16, -44($sp)
+sw $17, -48($sp)
+sw $18, -52($sp)
+sw $19, -56($sp)
+sw $20, -60($sp)
+sw $21, -64($sp)
+sw $22, -68($sp)
+sw $23, -72($sp)
+addi $fp $sp -76
+addi $sp $sp -120
+jal go
+lw $t0, -28($fp)
+move, $t0, $v0
+sw $t0, -28($fp)
+
+# 7 * Symbol(`_t000003`, integer, var, 32) Symbol(`a`, integer, var, 4) Symbol(`_t000002`, integer, var, 28)
+lw $t0, -4($fp)
+lw $t1, -28($fp)
+lw $t2, -32($fp)
+mul $t2, $t0, $t1
+
+# 8 + Symbol(`_return`, integer, var, 8, [('b', 'integer', True), ('a', 'integer', False)]) Symbol(`_t000003`, integer, var, 32) 0
+lw $t3, -8($fp)
+li $t8, 0
+add $t3, $t2, $t8
+
+# 9 JMP _l000001 None None
+sw $t0, -4($fp)
+sw $t1, -28($fp)
+sw $t2, -32($fp)
+sw $t3, -8($fp)
+j _l000001
+
+# 10 LABEL _l000000 None None
+_l000000:
+
+# 11 + Symbol(`_return`, integer, var, 8, [('b', 'integer', True), ('a', 'integer', False)]) 1 0
+lw $t0, -8($fp)
+addi $t0, $0, 1
+sw $t0, -8($fp)
+
+# 12 LABEL _l000001 None None
+_l000001:
+
+# 13 + Symbol(`_t000004`, integer, var, 36) Symbol(`b`, integer, var, 0, *) Symbol(`_return`, integer, var, 8, [('b', 'integer', True), ('a', 'integer', False)])
+lw $t9, 0($fp) 
+lw $t0, 0($t9)
+lw $t1, -8($fp)
+lw $t2, -36($fp)
+add $t2, $t0, $t1
+lw $t9, 0($fp) 
+sw $t0, 0($t9)
+sw $t1, -8($fp)
+sw $t2, -36($fp)
+
+# 14 + Symbol(`b`, integer, var, 0, *) Symbol(`_t000004`, integer, var, 36) 0
+lw $t0, -36($fp)
+lw $t9, 0($fp) 
+lw $t1, 0($t9)
+li $t8, 0
+add $t1, $t0, $t8
+sw $t0, -36($fp)
+lw $t9, 0($fp) 
+sw $t1, 0($t9)
+
+# 15 + Symbol(`_t000005`, integer, var, 40) Symbol(`k`, integer, var, 4) Symbol(`_return`, integer, var, 8, [('b', 'integer', True), ('a', 'integer', False)])
+move $t9, $fp
+lw $t9, 76($t9)
+lw $t0, -4($t9)
+lw $t1, -8($fp)
+lw $t2, -40($fp)
+add $t2, $t0, $t1
+
+# 16 + Symbol(`k`, integer, var, 4) Symbol(`_t000005`, integer, var, 40) 0
+li $t8, 0
+add $t0, $t2, $t8
+
+# 17 RETURN Symbol(`_return`, integer, var, 8, [('b', 'integer', True), ('a', 'integer', False)]) main.go None
+move $t9, $fp
+lw $t9, 76($t9)
+sw $t0, -4($t9)
+sw $t1, -8($fp)
+sw $t2, -40($fp)
+lw $v0, -8($fp)
+addi $sp, $sp, 120
+lw $fp, 72($fp)
+lw $8, -12($sp)
+lw $9, -16($sp)
+lw $10, -20($sp)
+lw $11, -24($sp)
+lw $12, -28($sp)
+lw $13, -32($sp)
+lw $14, -36($sp)
+lw $15, -40($sp)
+lw $16, -44($sp)
+lw $17, -48($sp)
+lw $18, -52($sp)
+lw $19, -56($sp)
+lw $20, -60($sp)
+lw $21, -64($sp)
+lw $22, -68($sp)
+lw $23, -72($sp)
+move $t8, $ra
+lw $ra, -8($sp)
+jr $t8
+
+# 18 LABEL main None None
+main:
+move $fp, $sp
+addi $sp, $sp, -12
+
+# 19 + Symbol(`k`, integer, var, 4) 0 0
+lw $t0, -4($fp)
+addi $t0, $0, 0
+
+# 20 REFER None Symbol(`k`, integer, var, 4) None
+
+# pass address.
+addi $t8, $fp, -4
+sw $t8, -76($sp)
+
+# 21 PARAM None 5 None
+li $t8, 5
+sw $t8, -80($sp)
+
+# 22 CALL Symbol(`_t000000`, integer, var, 8) go main
+sw $t0, -4($fp)
+# = fp
+sw $fp, 0($sp)
+sw $fp, -4($sp)
+sw $ra, -8($sp)
+sw $8, -12($sp)
+sw $9, -16($sp)
+sw $10, -20($sp)
+sw $11, -24($sp)
+sw $12, -28($sp)
+sw $13, -32($sp)
+sw $14, -36($sp)
+sw $15, -40($sp)
+sw $16, -44($sp)
+sw $17, -48($sp)
+sw $18, -52($sp)
+sw $19, -56($sp)
+sw $20, -60($sp)
+sw $21, -64($sp)
+sw $22, -68($sp)
+sw $23, -72($sp)
+addi $fp $sp -76
+addi $sp $sp -120
+jal go
+lw $t0, -8($fp)
+move, $t0, $v0
+sw $t0, -8($fp)
+
+# 23 + Symbol(`f`, integer, var, 0) Symbol(`_t000000`, integer, var, 8) 0
+lw $t0, -8($fp)
+lw $t1, 0($fp)
+li $t8, 0
+add $t1, $t0, $t8
+
+# 24 PRINT None Symbol(`f`, integer, var, 0) None
+li $v0, 1
+addi $a0, $t1, 0
+syscall
+
+# 25 PRINTLN None None None
+li $v0, 11
+addi $a0, $0, 10
+syscall
+
+# 26 PRINT None Symbol(`k`, integer, var, 4) None
+lw $t2, -4($fp)
+li $v0, 1
+addi $a0, $t2, 0
+syscall
+
+# 27 PRINTLN None None None
+li $v0, 11
+addi $a0, $0, 10
+syscall
+sw $t0, -8($fp)
+sw $t1, 0($fp)
+sw $t2, -4($fp)
+li $v0, 10
+syscall
+```
+
+##### 模拟器测试
+
+![image-20190615222413328](assets/image-20190615222413328.png)
+
+结果正确
+
+### 测试3：test6.spl
+
+测试3是一个计算GCD的例子，也就是最大公因数，将两组数的最大公因数乘起来。会使用到函数调用和递归。
+
+```pascal
+program hello;
+var 
+	ans : integer;
+
+function gcd(a, b : integer) : integer;
+begin
+	if b = 0 then begin
+		gcd := a;
+	end
+	else begin
+		gcd := gcd(b , a MOD b);
+	end
+	;
+end
+;
+
+begin
+	ans := gcd(9 , 36) * gcd(3 , 6);
+	writeln(ans);
+end
+.
+```
+
+[注]在老师给的代码中中间的MOD的位置是%，但是事实上在SPL的定义中并没有这个符号。
+
+##### 中间代码
+
+```
+# 0 LABEL gcd main.gcd None
+# 1 = Symbol(`_t000000`, boolean, var, 12) Symbol(`b`, integer, var, 4) 0
+# 2 BEQ _l000000 Symbol(`_t000000`, boolean, var, 12) False
+# 3 + Symbol(`_return`, integer, var, 8, [('a', 'integer', False), ('b', 'integer', False)]) Symbol(`a`, integer, var, 0) 0
+# 4 JMP _l000001 None None
+# 5 LABEL _l000000 None None
+# 6 MOD Symbol(`_t000001`, integer, var, 16) Symbol(`a`, integer, var, 0) Symbol(`b`, integer, var, 4)
+# 7 PARAM None Symbol(`b`, integer, var, 4) None
+# 8 PARAM None Symbol(`_t000001`, integer, var, 16) None
+# 9 CALL Symbol(`_t000002`, integer, var, 20) gcd main
+#10 + Symbol(`_return`, integer, var, 8, [('a', 'integer', False), ('b', 'integer', False)]) Symbol(`_t000002`, integer, var, 20) 0
+#11 LABEL _l000001 None None
+#12 RETURN Symbol(`_return`, integer, var, 8, [('a', 'integer', False), ('b', 'integer', False)]) main.gcd None
+#13 LABEL main None None
+#14 PARAM None 9 None
+#15 PARAM None 36 None
+#16 CALL Symbol(`_t000000`, integer, var, 4) gcd main
+#17 PARAM None 3 None
+#18 PARAM None 6 None
+#19 CALL Symbol(`_t000001`, integer, var, 8) gcd main
+#20 * Symbol(`_t000002`, integer, var, 12) Symbol(`_t000000`, integer, var, 4) Symbol(`_t000001`, integer, var, 8)
+#21 + Symbol(`ans`, integer, var, 0) Symbol(`_t000002`, integer, var, 12) 0
+#22 PRINT None Symbol(`ans`, integer, var, 0) None
+#23 PRINTLN None None Non
+```
+
+##### 目标代码
+
+```
+
+# 0 LABEL gcd main.gcd None
+gcd:
+
+# 1 = Symbol(`_t000000`, boolean, var, 12) Symbol(`b`, integer, var, 4) 0
+lw $t0, -4($fp)
+lw $t1, -12($fp)
+li $t8, 0
+seq $t1, $t0, $t8
+
+# 2 BEQ _l000000 Symbol(`_t000000`, boolean, var, 12) False
+sw $t0, -4($fp)
+sw $t1, -12($fp)
+li $t8, 0
+beq $t1, $t8, _l000000
+
+# 3 + Symbol(`_return`, integer, var, 8, [('a', 'integer', False), ('b', 'integer', False)]) Symbol(`a`, integer, var, 0) 0
+lw $t0, 0($fp)
+lw $t1, -8($fp)
+li $t8, 0
+add $t1, $t0, $t8
+
+# 4 JMP _l000001 None None
+sw $t0, 0($fp)
+sw $t1, -8($fp)
+j _l000001
+
+# 5 LABEL _l000000 None None
+_l000000:
+
+# 6 MOD Symbol(`_t000001`, integer, var, 16) Symbol(`a`, integer, var, 0) Symbol(`b`, integer, var, 4)
+lw $t0, 0($fp)
+lw $t1, -4($fp)
+lw $t2, -16($fp)
+div $t0, $t1
+mfhi $t2
+
+# 7 PARAM None Symbol(`b`, integer, var, 4) None
+sw $t1, -76($sp)
+
+# 8 PARAM None Symbol(`_t000001`, integer, var, 16) None
+sw $t2, -80($sp)
+
+# 9 CALL Symbol(`_t000002`, integer, var, 20) gcd main
+sw $t0, 0($fp)
+sw $t1, -4($fp)
+sw $t2, -16($fp)
+# = parent's
+lw $t8, 76($fp)
+sw $t8, 0($sp)
+sw $fp, -4($sp)
+sw $ra, -8($sp)
+sw $8, -12($sp)
+sw $9, -16($sp)
+sw $10, -20($sp)
+sw $11, -24($sp)
+sw $12, -28($sp)
+sw $13, -32($sp)
+sw $14, -36($sp)
+sw $15, -40($sp)
+sw $16, -44($sp)
+sw $17, -48($sp)
+sw $18, -52($sp)
+sw $19, -56($sp)
+sw $20, -60($sp)
+sw $21, -64($sp)
+sw $22, -68($sp)
+sw $23, -72($sp)
+addi $fp $sp -76
+addi $sp $sp -100
+jal gcd
+lw $t0, -20($fp)
+move, $t0, $v0
+sw $t0, -20($fp)
+
+# 10 + Symbol(`_return`, integer, var, 8, [('a', 'integer', False), ('b', 'integer', False)]) Symbol(`_t000002`, integer, var, 20) 0
+lw $t0, -20($fp)
+lw $t1, -8($fp)
+li $t8, 0
+add $t1, $t0, $t8
+sw $t0, -20($fp)
+sw $t1, -8($fp)
+
+# 11 LABEL _l000001 None None
+_l000001:
+
+# 12 RETURN Symbol(`_return`, integer, var, 8, [('a', 'integer', False), ('b', 'integer', False)]) main.gcd None
+lw $v0, -8($fp)
+addi $sp, $sp, 100
+lw $fp, 72($fp)
+lw $8, -12($sp)
+lw $9, -16($sp)
+lw $10, -20($sp)
+lw $11, -24($sp)
+lw $12, -28($sp)
+lw $13, -32($sp)
+lw $14, -36($sp)
+lw $15, -40($sp)
+lw $16, -44($sp)
+lw $17, -48($sp)
+lw $18, -52($sp)
+lw $19, -56($sp)
+lw $20, -60($sp)
+lw $21, -64($sp)
+lw $22, -68($sp)
+lw $23, -72($sp)
+move $t8, $ra
+lw $ra, -8($sp)
+jr $t8
+
+# 13 LABEL main None None
+main:
+move $fp, $sp
+addi $sp, $sp, -16
+
+# 14 PARAM None 9 None
+li $t8, 9
+sw $t8, -76($sp)
+
+# 15 PARAM None 36 None
+li $t8, 36
+sw $t8, -80($sp)
+
+# 16 CALL Symbol(`_t000000`, integer, var, 4) gcd main
+# = fp
+sw $fp, 0($sp)
+sw $fp, -4($sp)
+sw $ra, -8($sp)
+sw $8, -12($sp)
+sw $9, -16($sp)
+sw $10, -20($sp)
+sw $11, -24($sp)
+sw $12, -28($sp)
+sw $13, -32($sp)
+sw $14, -36($sp)
+sw $15, -40($sp)
+sw $16, -44($sp)
+sw $17, -48($sp)
+sw $18, -52($sp)
+sw $19, -56($sp)
+sw $20, -60($sp)
+sw $21, -64($sp)
+sw $22, -68($sp)
+sw $23, -72($sp)
+addi $fp $sp -76
+addi $sp $sp -100
+jal gcd
+lw $t0, -4($fp)
+move, $t0, $v0
+sw $t0, -4($fp)
+
+# 17 PARAM None 3 None
+li $t8, 3
+sw $t8, -76($sp)
+
+# 18 PARAM None 6 None
+li $t8, 6
+sw $t8, -80($sp)
+
+# 19 CALL Symbol(`_t000001`, integer, var, 8) gcd main
+# = fp
+sw $fp, 0($sp)
+sw $fp, -4($sp)
+sw $ra, -8($sp)
+sw $8, -12($sp)
+sw $9, -16($sp)
+sw $10, -20($sp)
+sw $11, -24($sp)
+sw $12, -28($sp)
+sw $13, -32($sp)
+sw $14, -36($sp)
+sw $15, -40($sp)
+sw $16, -44($sp)
+sw $17, -48($sp)
+sw $18, -52($sp)
+sw $19, -56($sp)
+sw $20, -60($sp)
+sw $21, -64($sp)
+sw $22, -68($sp)
+sw $23, -72($sp)
+addi $fp $sp -76
+addi $sp $sp -100
+jal gcd
+lw $t0, -8($fp)
+move, $t0, $v0
+sw $t0, -8($fp)
+
+# 20 * Symbol(`_t000002`, integer, var, 12) Symbol(`_t000000`, integer, var, 4) Symbol(`_t000001`, integer, var, 8)
+lw $t0, -4($fp)
+lw $t1, -8($fp)
+lw $t2, -12($fp)
+mul $t2, $t0, $t1
+
+# 21 + Symbol(`ans`, integer, var, 0) Symbol(`_t000002`, integer, var, 12) 0
+lw $t3, 0($fp)
+li $t8, 0
+add $t3, $t2, $t8
+
+# 22 PRINT None Symbol(`ans`, integer, var, 0) None
+li $v0, 1
+addi $a0, $t3, 0
+syscall
+
+# 23 PRINTLN None None None
+li $v0, 11
+addi $a0, $0, 10
+syscall
+sw $t0, -4($fp)
+sw $t1, -8($fp)
+sw $t2, -12($fp)
+sw $t3, 0($fp)
+li $v0, 10
+syscall
+```
+
+##### 模拟器运行
+
+![image-20190615222639455](assets/image-20190615222639455.png)
+
+源程序是`ans := gcd(9 , 36) * gcd(3 , 6);`，可以看出前是9，后者是3，所以乘起来是27。
+
+如果修改数据为`ans := gcd(12, 144) * gcd(5 , 7);`。结果应该是12 * 1等于12。
+
+![image-20190615222829305](assets/image-20190615222829305.png)
+
+正确。
 
 ## 优化与展望
 
 在目标代码生成的过程中，为了避免在处理控制流时出现的变量值的异步问题，我们的策略是在每一个block结束后把当前寄存器中的值存回内存并清空寄存器，但并不是所有变量都存在异步的问题，这样就带来了对内存访问次数的增加，从而影响程序效率。一个比较好的解决办法是可以根据基本块构造的流图做优化，根据流图中每个节点的前后节点判断变量的使用情况，从而决定变量要不要存回内存。用流图还可以做代码冗余的优化，如果有重复赋值的情况存在，则可以将后面出现的新变量用旧变量代替，从而减少代码量。
+
+
+
+
 
 ## 附1： 分工
 

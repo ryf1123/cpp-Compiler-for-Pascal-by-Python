@@ -8,14 +8,14 @@ begin
 		gcd := a;
 	end
 	else begin
-		gcd := gcd(b , a % b);
+		gcd := gcd(b , a MOD b);
 	end
 	;
 end
 ;
 
 begin
-	ans := gcd(9 , 36) * gcd(3 , 6);
+	ans := gcd(12, 144) * gcd(5 , 7);
 	writeln(ans);
 end
 .
