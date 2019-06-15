@@ -25,7 +25,7 @@ class CodeGen():
 
         self.asmcode.append('li $v0, 10')
         self.asmcode.append('syscall')
-        self.display_asm()
+        # self.display_asm()
 
         self.write_code()
 
@@ -204,7 +204,7 @@ class CodeGen():
 
     def handle_label(self, codeline):
 
-        print("[*** This line]: ", codeline)
+        # print("[*** This line]: ", codeline)
         # TODO: 保存ra，保存所有寄存器（临时寄存器和s寄存器）
 
         if codeline[3] != None:
@@ -230,7 +230,7 @@ class CodeGen():
 
     def handle_call(self, codeline):
 
-        print("[This line]: ", codeline)
+        # print("[This line]: ", codeline)
 
         for op in self.symbol_register.keys():
             reg = self.symbol_register[op]
@@ -244,10 +244,10 @@ class CodeGen():
 
         # TODO: 访问链：判断两个scope之间的关系
         self.scopeStack[-1]
-        print("****")
-        print(codeline[4])
-        print(self.scopeStack[-1])
-        print('.'.join(self.scopeStack[-1].split('.')[:-1]))
+        # print("****")
+        # print(codeline[4])
+        # print(self.scopeStack[-1])
+        # print('.'.join(self.scopeStack[-1].split('.')[:-1]))
         # if codeline[4] == self.scopeStack[-1]:
         #     # 访问控制 = fp
         #     pass
@@ -296,7 +296,7 @@ class CodeGen():
             self.asmcode.append("move, {}, $v0".format(reg_lhs))
 
     def handle_params(self, codeline):
-        print("[This line]: ", codeline)
+        # print("[This line]: ", codeline)
 
         # TODO: 只支持传基础类型
         # if codeline
@@ -316,7 +316,7 @@ class CodeGen():
         self.paraCounter += 1
 
     def handle_refers(self, codeline):
-        print("[This line]: ", codeline)
+        # print("[This line]: ", codeline)
 
         # TODO: 只支持传基础类型
         # if codeline
@@ -344,7 +344,7 @@ class CodeGen():
 
         line_num, _, lhs, _, _ = codeline
 
-        print("[This line]: ", codeline)
+        # print("[This line]: ", codeline)
 
         # 寄存器存回内存
         for op in self.symbol_register:
@@ -386,11 +386,11 @@ class CodeGen():
         self.asmcode.append('jr $t8')  # 这个地方不是跳转到ra，因为ra已经恢复成跳转之后的返回地址了
 
     def handle_loadref(self, codeline):
-        print("[This line]: ", codeline)
+        # print("[This line]: ", codeline)
         pass
 
     def handle_storeref(self, codeline):
-        print("[This line]: ", codeline)
+        # print("[This line]: ", codeline)
         print(codeline)
         pass
 

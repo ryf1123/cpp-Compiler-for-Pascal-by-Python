@@ -33,17 +33,17 @@ class Node(object):
 
 
 def traversal(graph, node):
-    print()
-    print("node.type:", node.type)
+    # print()
+    # print("node.type:", node.type)
     if node.children != None and node.type != "empty_production":
-        print(123)
-        print(node.type)
-        print("node.children:", node.children)
+        # print(123)
+        # print(node.type)
+        # print("node.children:", node.children)
         for child in node.children:
             #: 用于完善代码时取消忽略判断，但是真实情况应该忽略None
             if (not isinstance(child, str)):
                 # if (not child == None) and (not isinstance(child, str)):
-                print("node.id, child:", node.id, child, node.type)
+                # print("node.id, child:", node.id, child, node.type)
                 try:
                     edge = pydot.Edge(node.id, child.id)
                     graph.add_edge(edge)
@@ -57,4 +57,4 @@ def traversal(graph, node):
                 edge = pydot.Edge(node.id, child+"%10d" %
                                   (round(random.random() * 100000000)))
                 graph.add_edge(edge)
-        print("[End of for]")
+        # print("[End of for]")

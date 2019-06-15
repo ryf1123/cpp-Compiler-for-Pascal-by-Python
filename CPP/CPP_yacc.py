@@ -15,7 +15,6 @@ import CodeGen
 
 precedence = (
     ('left', 'PLUS', 'MINUS'),
-    # ('left', 'MUL', 'DIV', 'kDIV', 'kMOD')
     ('left', 'MUL', 'DIV', 'MOD')
 )
 
@@ -61,7 +60,7 @@ def p_program(p):
 
 def p_program_head(p):
     '''program_head :  PROGRAM  NAME  SEMI'''
-    p[0] = Node("program_head", [p[1], p[2], p[3]])
+    p[0] = Node("program_head", [p[2]])
 
 
 def p_routine(p):
@@ -866,8 +865,8 @@ def p_expr(p):
         if p[2] == 'or':
             symbol = table.get_temp('boolean')
         else:
-            print(type_of_node(p[1]))
-            print(type_of_node(p[3]))
+            # print(type_of_node(p[1]))
+            # print(type_of_node(p[3]))
 
             if type_of_node(p[1]) == 'real' or type_of_node(p[3]) == 'real':
                 symbol = table.get_temp('real')
@@ -1073,7 +1072,7 @@ def p_empty(p):
 
 
 def p_error(p):
-    raise ValueError("Syntax Error")
+    print("Syntax error")
 
 
 if __name__ == '__main__':
@@ -1088,7 +1087,7 @@ if __name__ == '__main__':
         # print(table.scope())
         scopes['main'] = table.scope()
 
-        print("##")
+        # print("##")
 
         for scope in scopes:
             print(scopes[scope])

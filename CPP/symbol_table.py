@@ -261,7 +261,7 @@ class Table:
             return self.get_identifier(name.lower(), index - 1)
 
     def get_identifier_scope(self, name, index=None):
-        print(self)
+        # print(self)
 
         if index is None:
             index = len(self.table) - 1
@@ -299,7 +299,7 @@ class Table:
     def del_scope(self):
         '''删除一层作用域'''
         scope = self.table.pop()
-        print(scope)
+        # print(scope)
         return scope
 
 
@@ -319,4 +319,4 @@ if __name__ == '__main__':
         'data_type': 'Student',  # 1 + (4+1)
         'dimension': [(1, 100)]  # 100
     })
-    print(t)  # (1 + (4+1)) * 100
+    # print(t)  # (1 + (4+1)) * 100
