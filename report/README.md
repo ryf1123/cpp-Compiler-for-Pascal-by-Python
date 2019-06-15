@@ -4,7 +4,7 @@
 
 | 邱兆林     | 刘洪甫 | 任宇凡     |
 | ---------- | ------ | ---------- |
-| 3160105287 |        | 3160104704 |
+| 3160105287 | 3160104769 | 3160104704 |
 
 [TOC]
 
@@ -368,8 +368,225 @@ Table([
 ```
 
 ## 中间代码生成
+我们的中间代码使用的是自己定义的三地址代码，形式为（operation, lhs, op1, op2)
 
+具体定义规则如下：
+| Operation 操作符 | lhs结果 | op1       | Op2     |
+| ---------------- | ------- | --------- | ------- |
+| +\-\*\/          | 结果    | 操作数1   | 操作数2 |
+| PRINT            |         | 参数      |         |
+| PRINTLN          |         |           |         |
+| PARAM            |         | 参数      |         |
+| CALL(返回赋值)   | 结果    | 调用label |         |
+| CALL(返回不赋值) |         | 调用label |         |
+| LOADREF          | 结果    | 符号      | index   |
+| STOREREF         | 值      | 符号      | index   |
+| SLT              | 结果    | 操作数1   | 操作数2 |
+| BNE              | Label   | 操作数1   | 操作数2 |
+| BEQ              | Label   | 操作数1   | 操作数2 |
+| JMP              | Label   |           |         |
+| LABEL            | Label   | scope 名  |         |
+| INPUT            | 保存值  |           |         |
+| RETURN           | jieguo  | scope 名  |         |
+| NOT              | 结果    | 操作数    |         |
+| MOD              |         |           |         |
 
+中间代码的生成过程包含在parsing过程中，我们定义了一个类ThreeAC用于存放三地址代码，并封装了emit函数用于parsing时生成中间代码。
+
+例如下面这段代码，这是一段常数赋值的语法。在解析到这里的时候我们把三地址代码emit出来，赋值语句用加法替代，结果是symbol，常量是该节点中const_value对应的位置
+```python
+def p_const_expr(p):
+    """const_expr : NAME EQUAL const_value SEMI"""
+    p[0] = Node("const_expr", [p[1], p[3]])
+
+    symbol = table.define(p[1], p[3].type, 'const', p[3].value)
+    emit('+', symbol, p[3], 0)
+```
+
+## 寄存器分配
+在生成中间代码之后，将中间代码转化为目标代码的过程中，需要使用到某个变量，需要给变量分配寄存器或者存到内存里，但是我们知道访问寄存器的速度显然是比直接访问内存快的，所以我们需要给变量分配寄存器。因此我们定义了寄存器分配类AllocateRegister
+
+| 属性      | 含义                         | 说明                                                         |
+| --------- | ---------------------------- | ------------------------------------------------------------ |
+| symtabel | 符号表     | 指parsing结束后存有scope信息的表 |
+| code     | 三地址代码  | 指parsing结束后存放在三地址类的代码 |
+| symbol_register  | 符号寄存器表 | 用于记录存放每个变量对应的寄存器的字典  |
+| unused_register_list | 未使用寄存器表 | 全局定义的未使用寄存器表，包括mips里32个寄存器 |
+| basic_blocks | 基本块 | 用于记录划分基本块后每个基本块的起始位置信息 |
+| next_use | 下一状态表 | 用于记录每个基本块中每个状态对应的下一状态寄存器使用情况 |
+
+### 基本块划分
+
+基本块指连续三地址状态的最大序列，其中控制流只能在块的第一个语句中进入，并在最后一个语句中离开。
+基于此我们知道，三地址码中以下几种情况对应了基本块的划分：
+
+- 跳转指令的下一个指令
+- 跳转指令的目标指令
+- 自带lable的指令
+- 程序的第一条指令
+
+```python
+block_part = []
+# 首指令
+block_part.append(0)
+
+for i in range(len(self.code)):
+    code_line = self.code[i]
+    # 跳转指令
+    if code_line[1].lower() in ['bne', 'beq', 'jmp']:
+        if code_line[2] != None:
+            block_part.append(self.label_line(code_line[2]))
+        # 跳转指令下一条指令
+        if i != len(self.code)-1:
+            block_part.append(self.code[i+1][0])
+    
+    # 自带label指令
+    elif code_line[1].lower() in ['label']:
+        block_part.append(code_line[0])
+    elif code_line[1].lower() in ['call', 'return'] and i != len(self.code)-1:
+        block_part.append(self.code[i+1][0])
+```
+
+最后去除行号中所有重复的值，然后排序，从而得到基本块的划分。
+测试样例6(上面是中间代码，下面是基本块划分结果)：
+```
+# 0 LABEL gcd main.gcd None
+# 1 = Symbol(`_t000000`, boolean, var, 12) Symbol(`b`, integer, var, 4) 0
+# 2 BEQ _l000000 Symbol(`_t000000`, boolean, var, 12) False
+# 3 + Symbol(`_return`, integer, var, 8, [('a', 'integer', False), ('b', 'integer', False)]) Symbol(`a`, integer, var, 0) 0
+# 4 JMP _l000001 None None
+# 5 LABEL _l000000 None None
+# 6 MOD Symbol(`_t000001`, integer, var, 16) Symbol(`a`, integer, var, 0) Symbol(`b`, integer, var, 4)
+# 7 PARAM None Symbol(`b`, integer, var, 4) None
+# 8 PARAM None Symbol(`_t000001`, integer, var, 16) None
+# 9 CALL Symbol(`_t000002`, integer, var, 20) gcd main
+#10 + Symbol(`_return`, integer, var, 8, [('a', 'integer', False), ('b', 'integer', False)]) Symbol(`_t000002`, integer, var, 20) 0
+#11 LABEL _l000001 None None
+#12 RETURN Symbol(`_return`, integer, var, 8, [('a', 'integer', False), ('b', 'integer', False)]) main.gcd None
+#13 LABEL main None None
+#14 PARAM None 9 None
+#15 PARAM None 36 None
+#16 CALL Symbol(`_t000000`, integer, var, 4) gcd main
+#17 PARAM None 3 None
+#18 PARAM None 6 None
+#19 CALL Symbol(`_t000001`, integer, var, 8) gcd main
+#20 * Symbol(`_t000002`, integer, var, 12) Symbol(`_t000000`, integer, var, 4) Symbol(`_t000001`, integer, var, 8)
+#21 + Symbol(`ans`, integer, var, 0) Symbol(`_t000002`, integer, var, 12) 0
+#22 PRINT None Symbol(`ans`, integer, var, 0) None
+#23 PRINTLN None None None
+
+# basic_blocks
+[(0, 2), (3, 4), (5, 9), (10, 10), (11, 12), (13, 16), (17, 19), (20, 23)]
+```
+
+### 分配策略
+
+寄存器分配算法——getReg函数设计：
+
+如果该变量已经被分配到某个寄存器中，直接使用该寄存器，否则在未使用寄存器中分配一个。如果已经没有未使用寄存器，那么计算选择一个最小替换代价的寄存器。
+
+```python
+if op in self.symbol_register:
+    reg = self.symbol_register[op]
+
+elif len(self.unused_register) > 0:
+    reg = self.unused_register[0]
+    self.unused_register.remove(reg)
+    self.symbol_register[op] = reg
+
+else:
+    var = self.get_block_minuse(op, block_index, line_num)
+    reg = self.symbol_register[var]
+    del self.symbol_register[var]
+```
+
+其中，在寄存器数量不够的时候，用到的最小替换代价策略函数get_block_minuse的设计思路如下:
+
+将每个基本块中，从块中最后一行到块中第一行每行的三地址码行号信息存入next_use中，靠前行的变量的行号可以替代该变量出现在的靠后行的行号，最后将链表反转。
+```python
+line = {}
+for i in range(len(code), 0, -1):
+    code_line = code[i-1]
+    line_num, _, lhs, op1, op2 = code_line
+
+    if type(lhs) == Symbol:
+        line[lhs] = float("inf")
+    if type(lhs) == Symbol:
+        line[op1] = line_num
+    if type(lhs) == Symbol:
+        line[op2] = line_num
+    preline = line.copy()
+    self.next_use[block_index].append(preline)
+
+self.next_use[block_index] = list(reversed(self.next_use[block_index]))
+```
+
+然后计算最小替换代价的get_block_minuse函数，选择出在该block后面行中没有出现（inf）的变量或者出现在最后行（行号最大）的变量对应的寄存器，即为待替换的寄存器。
+```python
+def get_block_minuse(self, op, block_index, line_num):
+    start = self.basic_blocks[block_index][0]
+    next_use_block = self.next_use[block_index][line_num+1-start]
+    max_line = 0 # 行号
+    max_sym = ''
+
+    for sym in next_use_block.keys():
+        if self.symbol_register[sym] != '' and float(next_use_block[sym]) > max_line:
+            max_line = float(next_use_block[sym])
+            max_sym = sym
+
+    return max_sym
+```
+
+需要注意的是在寄存器分配后使用前，要寄存器的值从内存读入，同理，在一个block或者scope结束后，或者寄存器值被替换前，也需要把这些寄存器中储存的变量值存回变量在内存中的位置。因此我们设计了如下load_mem, store_mem函数：
+
+```python
+def load_mem(self, op, reg, scope_stack):
+    if not op.reference:
+        off, code = self.offset(op, scope_stack)
+        if code is None:
+            return "lw {}, {}($fp)".format(reg, -off)
+        else:
+            return '\n'.join(code + ["lw {}, {}($t9)".format(reg, -off)])
+    else:
+        return "lw $t9, {}($fp) \nlw {}, 0($t9)".format(-op.offset, reg)
+
+def store_mem(self, op, reg, scope_stack):
+    if not op.reference:
+        off, code = self.offset(op, scope_stack)
+        if code is None:
+            return "sw {}, {}($fp)".format(reg, -off)
+        else:
+            return '\n'.join(code + ["sw {}, {}($t9)".format(reg, -off)])
+    else:
+        return "lw $t9, {}($fp) \nsw {}, 0($t9)".format(-op.offset, reg)
+```
+
+## 代码优化
+
+代码优化部分主要为涉及常数计算的表达式优化
+
+当两个运算符都为常数时，直接在高级程序里计算，而不用在mips汇编里运算，再将运算结果赋值或者继续进行别的操作。如果控制流的判断条件是常数运算，那么则直接根据运算结果判断是否跳转，如果跳转则添加jmp指令和目标label，否则直接跳过改语句。
+
+处理二元运算时：
+```python
+const_type = [int, str, bool]
+if type(op1) in const_type and type(op2) in const_type:
+    const = eval(str(op1)+' '+operation.lower()+' '+str(op2))
+    if type(const) == bool:
+        const = [False, True].index(const)
+    self.asmcode.append('addi'+' '+reg_lhs+', '+'$0, '+str(const))
+```
+
+处理跳转时：
+```python
+if type(op1) in const_type and type(op2) in const_type:
+    if operation.lower() == 'beq':
+        if op1 == op2:
+            self.asmcode.append('j {}'.format(reg_lhs))
+    if operation.lower() == 'bne':
+        if op1 != op2:
+            self.asmcode.append('j {}'.format(reg_lhs))
+```
 
 ## 代码生成
 
@@ -544,9 +761,7 @@ self.paraCounter += 1
 
 ## 优化与展望
 
-
-
-
+在目标代码生成的过程中，为了避免在处理控制流时出现的变量值的异步问题，我们的策略是在每一个block结束后把当前寄存器中的值存回内存并清空寄存器，但并不是所有变量都存在异步的问题，这样就带来了对内存访问次数的增加，从而影响程序效率。一个比较好的解决办法是可以根据基本块构造的流图做优化，根据流图中每个节点的前后节点判断变量的使用情况，从而决定变量要不要存回内存。用流图还可以做代码冗余的优化，如果有重复赋值的情况存在，则可以将后面出现的新变量用旧变量代替，从而减少代码量。
 
 ## 附1： 分工
 
