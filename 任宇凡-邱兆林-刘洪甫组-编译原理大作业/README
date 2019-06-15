@@ -9,5 +9,8 @@ $ python3 CPP.py ./test_cases/test2.spl
 生成的目标代码文件
 ./工程代码/result.asm
 
+生成的AST图片在
+./工程代码/visulization/AST_graph.png
+
 报告在 
 ./report.pdf
