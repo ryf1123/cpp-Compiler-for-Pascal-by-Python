@@ -2,9 +2,9 @@
 
 # CPP: Compile for Pascal by Python 
 
-| 邱兆林 | 刘洪甫 | 任宇凡     |
-| ------ | ------ | ---------- |
-|        |        | 3160104704 |
+| 邱兆林     | 刘洪甫 | 任宇凡     |
+| ---------- | ------ | ---------- |
+| 3160105287 |        | 3160104704 |
 
 [TOC]
 
@@ -245,9 +245,127 @@ END.
 
 ## 符号表
 
+符号表在生成抽象语法树的过程中建立。符号表的总体结构如下图所示。
+
 ![image-20190613195223079](assets/image-20190613195223079.png)
 
+### 符号类
 
+符号类是用来存放一个符号的。所有的符号都是符号类的一个对象。它的结构按照下表定义。
+
+| 属性         | 含义                         | 说明                                                         |
+| ------------ | ---------------------------- | ------------------------------------------------------------ |
+| name         | 符号名                       | 转化为小写                                                   |
+| type         | 符号类型                     | 可以是基础类型 'integer', 'real', 'char', 'boolean'，复杂类型 'array', 'record'，或者是已定义的其他类型。 |
+| var_function | 用于区分该符号是变量还是函数 | 'var', 'const', 'function', 'procedure', 'type'              |
+| offset       | 偏移量                       | 指该符号在其作用域内的偏移量                                 |
+| params       | 参数                         | 复杂类型或函数时用于保存额外信息                             |
+| size         | 大小                         | 初始化时自动计算                                             |
+| reference    | 是否为引用                   |                                                              |
+
+其中，params 只当 const、function、procedure、array、record 时有参数。如果是 function，那么 params 依照一下的 list 传递参数列表：
+
+```
+[
+    (arg1, type1),
+    (arg2, type2),
+    ...
+]
+```
+如果是 array，那么 params 依照以下的 dict 传递数据类型和范围：
+```
+{
+    'data_type': 'integer',
+    'dimension': [(0, 100), (0, 1000), ...]
+}
+```
+如果是 record 那么 params 依照以下的 list 传递结构：（其中 type 可能是复杂类型）
+```
+[
+    (name1, type1),
+    (name2, type2),
+    ...
+]
+```
+如果是 const 那么 params 传递常量的值。
+
+### 作用域类
+
+本编译器的符号表按照不同的作用域分别保存。每一个作用域用一个作用域类的对象来记录。
+
+| 属性      | 含义                         | 说明                                                         |
+| --------- | ---------------------------- | ------------------------------------------------------------ |
+| name      | 作用域名                     | 转化为小写，用 '.' 连接父作用域名，例如 'main.f'             |
+| width     | 宽度                         | 可以是基础类型 'integer', 'real', 'char', 'boolean'，复杂类型 'array', 'record'，或者是已定义的其他类型。 |
+| symbols   | 符号 | 'var', 'const', 'function', 'procedure', 'type'              |
+| temps | 偏移量                       | 指该符号在其作用域内的偏移量                                 |
+| labels | 参数                         | 复杂类型或函数时用于保存额外信息                             |
+
+当定义一个新符号时，首先初始化一个符号类，并且把当前作用域宽度传递给符号类的构造函数，这样符号类中就可以保存正确的偏移量信息。接着，把它添加到 symbols 或者 temps 中，最后更新作用域类的 width。
+
+当定义一个 label 时，生成一个字符串，并且把它添加到 labels 集合中。
+
+### 符号表类
+
+符号表类是符号表的接口类，提供接口给编译器的其他部分使用。符号表类使用栈来保存作用域。当有新的一层作用域时，将其入栈。当作用域结束时，将其出栈。符号表内定义了以下方法。
+
+| 方法                       | 含义                               |
+| -------------------------- | ---------------------------------- |
+| scope()                    | 获取当前作用域                     |
+| get_identifier(name)       | 从符号表中查找一个符号             |
+| get_identifier_scope(name) | 从符号表中查找一个符号所处的作用域 |
+| define(name, type, ...)    | 在当前作用域定义一个符号           |
+| get_temp(type, ...)        | 在当前作用域获取一个临时符号       |
+| get_label()                | 在当前作用域获取一个 label         |
+| add_scope(name, type)      | 增加一层作用域                     |
+| del_scope()                | 删除一层作用域                     |
+
+### 符号表使用样例
+
+引入符号表模块后，使用上面定义的结构对符号表进行操作。运行以下的测试样例：
+
+```python
+t = Table()
+t.define('IDCard', 'record', 'type', [
+    ('ID', 'integer'),
+    ('name', 'char')
+])
+t.add_scope('f', 'function', 'integer')
+t.define('Student', 'record', 'type', [
+    ('name', 'char'),
+    ('card', 'IDCard')
+])
+t.define('CircleLin', 'Student', 'var')
+t.define('students', 'array', 'var', {
+    'data_type': 'Student',
+    'dimension': [(1, 100)]
+})
+print(t)
+```
+
+会得到下面的符号表：
+
+```python
+Table([
+    Scope(`main`, symbols=[
+        Symbol(`idcard`, record, type, 0, [
+            ('ID', 'integer'), 
+            ('name', 'char')
+        ])
+    ], temps=[]),
+    Scope(`main.f`, symbols=[
+        Symbol(`student`, record, type, 0, [
+            ('name', 'char'),
+            ('card', 'IDCard')
+        ]),
+        Symbol(`circlelin`, student, var, 0),
+        Symbol(`students`, array, var, 12, {
+            'data_type': 'Student', 
+            'dimension': [(1, 100)]
+        })
+    ], temps=[])
+])
+```
 
 ## 中间代码生成
 
