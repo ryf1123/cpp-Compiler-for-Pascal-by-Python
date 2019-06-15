@@ -1,11 +1,11 @@
 from Rule import jump_list, unused_register_list
+from symbol_table import Symbol
 
 
 class AllocteRegister():
     def __init__(self, symtable, threeAC):
         self.symtable = symtable
         self.code = threeAC.code
-        self.symbols = []
 
         self.unused_register = unused_register_list.copy()
 
@@ -114,39 +114,35 @@ class AllocteRegister():
         code = self.code[start-1:end]
         preline = {}
 
-        # for sym in self.symbols:
-        #     preline[sym] = float("inf")
-
+        line = {}
         for i in range(len(code), 0, -1):
-            line = {}
             code_line = code[i-1]
+            line_num, _, lhs, op1, op2 = code_line
 
-            lhs = code_line[2]
-            op1 = code_line[3]
-            op2 = code_line[4]
-
-            line[lhs] = float("inf")
-            line[op1] = code_line[0]
-            line[op2] = code_line[0]
-
-            self.next_use[block_index].append(line)
+            if type(lhs) == Symbol:
+                line[lhs] = float("inf")
+            if type(lhs) == Symbol:
+                line[op1] = line_num
+            if type(lhs) == Symbol:
+                line[op2] = line_num
             preline = line.copy()
+            self.next_use[block_index].append(preline)
 
         self.next_use[block_index] = list(reversed(self.next_use[block_index]))
         # print(self.next_use[block_index])
 
-    def get_block_maxuse(self, op, block_index, line_num):
+    def get_block_minuse(self, block_index, line_num):
         '''
-            return the symbol with maximum value of next use
+            return the symbol with min value of next use
         '''
         start = self.basic_blocks[block_index][0]
         next_use_block = self.next_use[block_index][line_num+1-start]
-        max_use = 0
+        max_line = 0
         max_sym = ''
 
         for sym in next_use_block.keys():
-            if self.symbol_register[sym] != '' and float(next_use_block[sym]) > max_use:
-                max_use = float(next_use_block[sym])
+            if self.symbol_register[sym] != '' and float(next_use_block[sym]) > max_line:
+                max_line = float(next_use_block[sym])
                 max_sym = sym
 
         return max_sym
@@ -197,18 +193,6 @@ class AllocteRegister():
 
         line_num, operation, lhs, op1, op2 = code_line
 
-        # TODO 寄存器选择优化
-        # if lhs not in self.symbols:
-        #     return (lhs, 'replace nothing')
-
-        # if line_num < end:
-        #     print(line_num+1-start)
-        #     next_use_block = self.next_use[block_index][line_num+1-start]
-        # else:
-        #     next_use_block = {}
-        #     for sym in self.symbols:
-        #         next_use_block[sym] = float("inf")
-
         if op in self.symbol_register:
             reg = self.symbol_register[op]
 
@@ -220,7 +204,7 @@ class AllocteRegister():
             asmcode.append(self.load_mem(op, reg, scope_stack))
 
         else:
-            var = self.get_block_maxuse(op, block_index, line_num)
+            var = self.get_block_minuse(block_index, line_num)
             reg = self.symbol_register[var]
             asmcode.append(self.store_mem(var, reg, scope_stack))
             del self.symbol_register[var]
