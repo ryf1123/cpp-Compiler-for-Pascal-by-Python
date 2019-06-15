@@ -1027,7 +1027,7 @@ def p_factor_name(p):
     if symbol.var_function == 'function':
         if table.scope().name.endswith('.' + symbol.name):
             symbol = table.get_identifier('_return')
-    
+
     p[0].symbol = symbol
 
 
@@ -1073,7 +1073,7 @@ def p_empty(p):
 
 
 def p_error(p):
-    print("Syntax error")
+    raise ValueError("Syntax Error")
 
 
 if __name__ == '__main__':

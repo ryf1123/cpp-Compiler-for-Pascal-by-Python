@@ -11,7 +11,7 @@ if __name__ == '__main__':
         print("[info] source code loaded")
         print("\n\n\n")
 
-        result = parser.parse(data, debug=1)
+        result = parser.parse(data, debug=0)
         print("[info] parser done")
         print("\n\n\n")
         scopes['main'] = table.scope()
