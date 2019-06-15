@@ -6,7 +6,6 @@ function go(var b : integer; a : integer): integer;
 var 
 	fk : integer;
 	t : real;
-/Users/evanren/Documents/2019年春夏学期/编译原理/project/spl_test_examples/test6.spl
 begin
 	if a > 0 then 
 	begin

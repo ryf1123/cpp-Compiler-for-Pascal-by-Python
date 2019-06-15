@@ -38,12 +38,23 @@ class ThreeAC(object):
             self.code[i] = [i] + code
 
     def display(self):
+        f = open("result.inter", 'w')
+        # for line in self.asmcode:
+        #     f.write(line+'\n')
+
         for i, code in enumerate(self.code):
             linenum, op, lhs, op1, op2 = code
-            print('#%2s %s %s %s %s' % (
+            f.write('#%2s %s %s %s %s' % (
                 linenum,
                 op,
                 lhs,
                 op1,
                 op2
-            ))
+            )+'\n')
+            # print('#%2s %s %s %s %s' % (
+            #     linenum,
+            #     op,
+            #     lhs,
+            #     op1,
+            #     op2
+            # ))
