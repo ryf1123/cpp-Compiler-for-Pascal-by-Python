@@ -131,7 +131,7 @@ class CodeGen():
 
         if operation == 'PRINTLN':
             self.asmcode.append('li $v0, 11')
-            self.asmcode.append('addi $a0, $0, 32')
+            self.asmcode.append('addi $a0, $0, 10')
             self.asmcode.append('syscall')
             return
 
@@ -446,6 +446,16 @@ class CodeGen():
                     self.handle_loadref(codeline)
                 elif operation == 'STOREREF':
                     self.handle_storeref(codeline)
+
+                if hasattr(lhs, 'reference') and lhs.reference or \
+                        hasattr(op1, 'reference') and op1.reference or \
+                        hasattr(op2, 'reference') and op2.reference:
+                    for op in self.symbol_register:
+                        reg = self.symbol_register[op]
+                        self.asmcode.append(
+                            self.store_mem(op, reg, self.scopeStack))
+                    self.symbol_register.clear()
+                    self.allocReg.unused_register = unused_register_list.copy()
 
             if block_code[-1][1] not in ['JMP', 'BNE', 'BEQ']:
                 for op in self.symbol_register:
