@@ -6,16 +6,24 @@ var x, y: integer;
 procedure hello(x: real);
 
     var y: integer;
-    procedure hello_2(xx: real);
+    procedure hello_2();
         var yy: integer;
         begin
         writeln(xx+yy);
         end;
-        
     begin
     writeln(x+y);
+    end;        
+    
+procedure hello_3(zz: real);
+    var yy: integer;
+    begin 
+        hello_2();
     end;
 
+begin
+writeln(x+y);
+end;
 
 function test(var s:integer; x, y:real):integer;
     var a,b: real;

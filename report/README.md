@@ -375,6 +375,123 @@ Table([
 
 ![image-20190613195205142](assets/image-20190613195205142.png)
 
+> 从中间代码到目标代码的生成过程，虽然可以使用LLVM框架等简单办法，但是考虑之后我们还是选择了自己手动地编写从中间代码到目标代码的转换，其中包括复杂的运行时环境的维护。
+
+### 堆栈管理与函数跳转
+
+代码生成中比较复杂的是运行环境的维护，并且需要管理寄存器和程序运行的堆栈。
+
+由于我们的spl程序运行环境是基于栈的动态环境，所以在进入函数时需要(1)分配足够的栈空间给局部变量；(2)更新返回地址；(3)更新控制链和访问链；(4)保存寄存器的状态以便在退出函数时恢复；(5)将函数调用的参数进行压栈处理，以便在函数中使用。接下来我们将会跟着代码，详细地介绍其中的每一个环节。
+
+#### 访问链的处理
+
+访问链的处理较为复杂，需要分情况讨论。因为访问链不总是指向该函数的调用者，这个关系应该是在定义时就确定的。举个例子，
+
+```pascal
+procedure hello(x: real);
+
+    var y: integer;
+    procedure hello_2(xx: real);
+        var yy: integer;
+        begin
+        g();
+        end;
+        
+    begin
+    writeln(x+y);
+    end;
+```
+
+在上面代码段中，`hello_2`这段例程中就可以访问外部的`hello`例程中的变量，比如`y`。但是在`hello_2`中调用函数`g()`。函数`g()`中就不可以访问到`hello_2`的变量，更不能访问到`hello`中的变量。
+
+于是我们想到了一种区分两种情况的办法，因为我们通过定义(也就是scope)可以确定`hello_2`例程的访问链总是指向`hello`的。所以当`hello_2`的调用者不是`hello`时我们将访问链指向其调用者的访问链所指。当其调用者就是`hello`时，访问链直接指向其调用者。
+
+简要地说，一个新创建的函数的栈中的访问链，应该
+
+- 指向其调用者，如果其调用者就是在定义时嵌套该函数的。或者，
+- 和其调用者有相同的访问链指向。
+
+在代码实现如下
+
+```python
+        if codeline[4] == '.'.join(self.scopeStack[-1].split('.')[:-1]):
+            # 访问控制 = 当前活动访问控制
+            self.asmcode.append("# = parent's")
+            self.asmcode.append('lw $t8, 76($fp)')
+            self.asmcode.append('sw $t8, 0($sp)')
+        else:
+            self.asmcode.append('# = fp')
+            self.asmcode.append('sw $fp, 0($sp)')
+```
+
+上面第一种情况下，将其parent的访问链直接复制到了当前的，而第二种情况下将访问链指向了其parent的栈底。
+
+#### 控制链的处理
+
+相比起访问链的处理，控制链的处理简单了许多。只需要将其parent的fp放到合适的位置即可。
+
+```python
+self.asmcode.append('sw $fp, -4($sp)')
+```
+
+#### 返回地址存放
+
+```python
+self.asmcode.append('sw $ra, -8($sp)')
+```
+
+#### 寄存器状态的保存
+
+```python
+for index in range(8, 24):
+# SW R1, 0(R2)
+	self.asmcode.append("sw $%s, %d($sp)" % (index, -12 - (index-8)*4))
+```
+
+#### 变量的空间分配
+
+这一步通过把栈指针往下移动的方式给当前函数分配栈空间。
+
+其中首先通过`symtable`符号表获取当前函数中所有的函数需要占用的空间，然后将栈指针往下移动。其中的76是固定的需要移动的长度，包括访问链，放回地址等需要的空间。
+
+```python
+self.asmcode.append('addi $fp $sp -76')
+scope_width = self.symtable['%s.%s' %
+(codeline[4], codeline[3].lower())].width
+self.asmcode.append('addi $sp $sp %d' % -(scope_width + 76))
+```
+
+#### 完成跳转
+
+```python
+self.asmcode.append("jal %s" % codeline[3])
+```
+
+通过jal指令跳转到合适的label所在位置。
+
+#### 将返回值从$v0中取出
+
+当完成跳转之后，将在函数中计算出的参数保存下来，存放到当前寄存器分配得到的寄存器中。
+
+```python
+# 将返回值从 $v0 中取出
+if codeline[2]:
+block_index = self.allocReg.line_block(codeline[0])
+reg_lhs = self.handle_term(codeline[2], block_index, codeline[0])
+
+self.asmcode.append("move, {}, $v0".format(reg_lhs))
+```
+
+
+
+
+
+### 寄存器分配
+
+
+
+
+
 ## 测试样例
 
 
