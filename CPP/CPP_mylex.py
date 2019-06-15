@@ -87,7 +87,7 @@ class lexer:
     t_CHAR = r'(\'([^\\\'\.]?)\')|(\"([^\\\"\.]?)\")'
 
     def t_NAME(self, t):
-        r'[A-Za-z](_?[A-Za-z0-9])*'  # (\.[A-Za-z](_?[A-Za-z0-9])*)?'
+        r'[A-Za-z](_?[A-Za-z0-9])*' 
         t.type = reserved.get(t.value.lower(), 'NAME')
         return t
         
