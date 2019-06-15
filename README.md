@@ -4,24 +4,14 @@
 
 ![CPP-logo](assets/CPP-logo.jpg)
 
+
+---
+
 ## To Do
 
-- [ ] 准备展示
-- [ ] 完善剩下的代码 stack部分
-- [ ] 寄存器分配
-
-
-
-- [ ] 目标代码生成
-- [ ] Debug
-
-- [ ] float point
-
-- [ ] 函数引用传递
+Nothing needs to do
 
   
-
-
 
 ## MIPS模拟器
 
