@@ -1,6 +1,6 @@
 # CPP 
 
-运行方式
+How to run
 
 ```shell
 $ pip3.7 install ply
@@ -8,7 +8,7 @@ $ pip3.7 install pydot
 $ python3.7 myyacc2.py ./test_cases/test_div_mod.pas
 ```
 
-文件内容
+File contains
 
 ```shell
 .
